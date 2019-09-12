@@ -1,0 +1,6 @@
+/node_modules
+test.js
+fetch-hats-from-scm.js
+hats.json
+scmConfig.json
+package-lock.json
