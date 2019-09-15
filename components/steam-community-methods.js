@@ -1,6 +1,6 @@
 const SCM = require("../index");
-const Promises = require("@doctormckay/stdlib");
-
+const Promises = require("@doctormckay/stdlib").Promises;
+const QUERY_STRINGS = require("../resources/market-search-params");
 
 SCM.prototype.getSearchRender = function(params, callback=null) {
     return Promises.callbackPromise(["items"], true, callback, (accept, reject) => {

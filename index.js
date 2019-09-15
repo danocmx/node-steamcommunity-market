@@ -22,3 +22,4 @@ SCM.prototype.setOption = function() {
 }
 
 require("./components/market-listings");
+require("./components/steam-community-methods");
