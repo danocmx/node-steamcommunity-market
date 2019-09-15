@@ -1,6 +1,6 @@
 class CEconListingItem {
     constructor(asset, listinginfo) {
-        this.name = item.name;
+        this.name = asset.market_name;
 
     }
 }
