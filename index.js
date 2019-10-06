@@ -1,25 +1,42 @@
-const events = require("events").EventEmitter
-const inherits = require("util").inherits;
-const SteamCommunity = require("steamcommunity");
-const EMarketCurrencies = require("./resources/EMarketCurrencies");
+"use strict";
 
-/* TODO: add storage, setOption, proxies, options, compare-function; request only the scm page and get infos from all requests*/
-inherits(SCM, events);
-module.exports = SCM;
+/* Classes */
+const CMHistogram = require("./classes/CMHistogram");
+const CMItem = require("./classes/CMItem");
+const CMListing = require("./classes/CMListing");
+const CMOverview = require("./classes/CMOverview");
+const CMSearchItem = require("./classes/CMSearchItem");
 
+/* Enums */
+const EMarketCurrencies = require("./resources/CMEMarketCurrencies");
 
-function SCM(options = {}) {
-    this.options = {
-        currency: options.currency || EMarketCurrencies.USD,
-        language: options.language || "en",
-        country: options.country || "us"
-    };
-    this.community = new SteamCommunity();
+/* TODO: 
+- Centralize, make a SCM class controlling the request limits
+- HTTP headers
+*/
+
+/**
+ * Includes all the methods, enums and classes
+ * @package
+ */
+module.exports = {
+    enums                   : {
+        EMarketCurrencies: EMarketCurrencies
+    },
+    classes : {
+        CMHistogram : CMHistogram.CMHistogram,
+        CMItem      : CMItem.CMItem,
+        CMListing   : CMListing.CMListing,
+        CMOverview  : CMOverview.CMOverview,
+        CMSearchItem: CMSearchItem.CMSearchItem
+    },
+    utils   : {
+        sortListings    : CMListing.sortListings,
+        getPriceToString: CMHistogram.getPriceToString
+    },
+    getMarketItemHistogram  : CMHistogram.getMarketItemHistogram,
+    getMarketItemPage       : CMItem.getMarketItemPage,
+    getMarketItemListings   : CMListing.getMarketItemListings,
+    getMarketItemOverview   : CMOverview.getMarketItemOverview,
+    searchMarket            : CMSearchItem.searchMarket
 }
-
-SCM.prototype.setOption = function() {
-
-}
-
-require("./components/market-listings");
-require("./components/steam-community-methods");
