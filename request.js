@@ -19,10 +19,10 @@ function req(method, endpoint, params, callback) {
         method  : method,
         uri     : uri,
         headers : {
-            //referer   : uri.replace("/render", ""),   // Render API's have different referers
-            "User-Agent": "request"                     // Basic request lib user-agent
+            referer   : uri.replace("/render", ""), // Render API's have different referers
+            "User-Agent": "request"                 // Basic request lib user-agent
         },
-        ...params                                       // Rewrites previous params if necessery
+        ...params                                   // Rewrites previous params if necessery
     }
 
     request(options, (err, response, body) => {

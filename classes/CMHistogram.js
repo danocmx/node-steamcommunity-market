@@ -1,5 +1,4 @@
 const request = require("../request");
-const Promises = require("@doctormckay/stdlib").Promises;
 const CMEMarketCurrencies = require("../resources/CMEMarketCurrencies");
 
 /**
@@ -13,12 +12,12 @@ const CMEMarketCurrencies = require("../resources/CMEMarketCurrencies");
  * @return {Promise<[CMHistogram]>}
  */
 const getMarketItemHistogram = function(itemNameID, params, callback) {
-    return Promises.callbackPromise([], callback, false, (accept, reject) => {
-        if (typeof params === "function") {
-            callback = params;
-            params = null;
-        }
+    if (typeof params === "function") {
+        callback = params;
+        params = null;
+    }
 
+    return new Promise((resolve, reject) => {
         params = params || {}
         const qs = {
             item_nameid : itemNameID,
@@ -33,14 +32,17 @@ const getMarketItemHistogram = function(itemNameID, params, callback) {
             if (["itemNameID", "twoFactor", "currency", "language", "country"].includes(param)) continue;
             qs[param] = params[param];
         }
-
+    
         request("GET", "itemordershistogram",  { json: true, gzip: true, qs: qs }, (err, response) => {
             if (err) {
+                callback && callback(err);
                 reject(err);
                 return;
             }
-
-            accept( new CMHistogram(itemNameID, qs, response) );
+    
+            const histogramItem = new CMHistogram(itemNameID, qs, response)
+            callback && callback(null, histogramItem);
+            resolve( histogramItem );
         })
     })
 }
@@ -81,18 +83,18 @@ class CMHistogram {
      * @return {Promise.<Result>}  
      */
     update(callback) {
-        return Promises.callbackPromise([], true, callback, (accept, reject) => {
-            getMarketItemHistogram(this.itemNameID, this.qs, (err, histogram) => {
-                if (err) {
-                    reject(err);
-                    return;
-                }
-                this.buyOrders = histogram.buyOrders;
+        return getMarketItemHistogram(this.itemNameID, this.qs)
+            .then(histogram => {
                 this.sellOrders = histogram.sellOrders;
-                
-                accept(histogram);
+                this.buyOrders = histogram.buyOrders;
+
+                callback && callback(null, this);
+                return this;
             })
-        })
+            .catch(err => {
+                callback && callback(err);
+                return err;
+            })
     }
 
     /**

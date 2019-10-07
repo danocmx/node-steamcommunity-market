@@ -1,6 +1,9 @@
 const request = require("../request");
-const Promises = require("@doctormckay/stdlib").Promises;
-const getMarketItemPage = require("./CMItem");
+const getMarketItemPage = require("./CMItem").getMarketItemPage;
+const getMarketItemOverview = require("./CMOverview").getMarketItemOverview;
+const getMarketItemListings = require("./CMListing").getMarketItemListings;
+const getMarketItemHistogram = require("./CMHistogram").getMarketItemHistogram;
+const { parseCurrencyText } = require("../helpers");
 
 /**
  * Searches the community market
@@ -40,9 +43,10 @@ function searchMarket(params, callback) {
         }
     }
 
-    return Promises.callbackPromise([], callback, false, (accept, reject) => {
+    return new Promise((resolve, reject) => {
         request("GET", "search/render", { json: true, gzip: true, qs: qs }, (err, search) => {
             if (err) {
+                callback && callback(err);
                 reject(err);
                 return;
             }
@@ -53,7 +57,8 @@ function searchMarket(params, callback) {
                 searchResults.push( new CMSearchItem(search.results[i]) );
             }
 
-            accept( searchResults );
+            callback && callback(null, searchResults);
+            resolve( searchResults );
         })
     })
 }
@@ -99,6 +104,9 @@ class CMSearchItem {
         }
         /* For CMPage */
         this.page = null;
+        this.overview = null;
+        this.listings = null;
+        this.histogram = null;
     }
 
     /**
@@ -107,35 +115,85 @@ class CMSearchItem {
      * @return {Promise<CMPage>}
      */
     getPage(callback) {
-        return Promises.callbackPromise([], true, callback, (accept, reject) => {
-            getMarketItemPage(this.appid, this.hashName, null, (err, item) => {
-                if (err) {
-                    reject(err);
-                    return;
-                }
-                this.page = item;
-                accept(item);
+        return getMarketItemPage(this.appid, this.hashName)
+            .then(page => {
+                this.page = page;
+                
+                this.listings = page.listings;
+                this.histogram = page.histogram;
+
+                callback && callback(null, page);
+                return page;
             })
-        })
+            .catch(err => {
+                callback && callback(err);
+                return err;
+            })
     }
 
-    getOverview() {
+    getOverview(qs, callback) {
+        if (typeof qs === "function") {
+            callback = qs;
+            qs = null;
+        }
 
+        return getMarketItemOverview(this.appid, this.hashName, qs)
+            .then(overview => {
+                this.overview = overview;
+
+                callback && callback(null, overview);
+                return overview;
+            })
+            .catch(err => {
+                callback && callback(err);
+                return err;
+            })
     }
-}
 
-/**
- * Parses the currency text
- * @param {String} currencyText from the search render
- * @return {Object} prefix & suffix & price
- */
-function parseCurrencyText(currencyText) {
-    const match = currencyText.match(/([^0-9]*)(\d+[,.]?\d)*([^0-9]*)/);
-    return { prefix: match[1], suffix: match[3], price: parseFloat(match[2]) };
+    getListings(params, callback) {
+        if (typeof params === "function") {
+            callback = params;
+            params = null;
+        }
+
+        return getMarketItemListings(this.appid, this.hashName, params)
+            .then(listings => {
+                this.listings = listings;
+
+                callback && callback(null, listings);
+                return listings;
+            })
+            .catch(err => {
+                callback && callback(err);
+                return err;
+            })
+    }
+
+    getHistogram(params, callback) {
+        if (typeof params === "function") {
+            callback = params;
+            params = null;
+        }
+        
+        if (!this.page || !this.page.commodityID) {
+            return Promise.reject(new Error("No commodityID found."));
+        }
+
+        return getMarketItemHistogram(this.page.commodityID, params)
+            .then(histogram => {
+                this.histogram = histogram;
+
+                callback && callback(null, histogram);
+                return histogram;
+            })
+            .catch(err => {
+                callback && callback(err);
+                return err;
+            })
+    }
 }
 
 module.exports = {
     CMSearchItem        : CMSearchItem,
     searchMarket        : searchMarket,
-    parseCurrencyText   : parseCurrencyText
 };

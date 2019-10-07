@@ -1,6 +1,5 @@
 const cheerio = require("cheerio");
 const request = require("../request");
-const Promises = require("@doctormckay/stdlib").Promises;
 const { sortListings, getMarketItemListings } =  require("./CMListing");
 const { getMarketItemHistogram } = require("./CMHistogram");
 
@@ -18,33 +17,32 @@ const getMarketItemPage = function(appid, item, query, callback) {
         query = undefined;
     }
 
-    return Promises.callbackPromise([], callback, false, (accept, reject) => {
-        if (!appid || !item) {
-            reject(new Error("Please supply both appid and item arguments."));
-            return;
-        }
+    return new Promise((resolve, reject) => {
+        request("GET", `listings/${appid}/${encodeURIComponent(item)}`, { qs: { filter: query } }, (err, html) => {
+            if (err) {
+                callback && callback(err);
+                reject(err);
+                return;
+            }
+            const $ = cheerio.load(html);
+            
+            /* Looks if we have found any listings. Not sure if we should keep this, will do futher tests. */
+            if ($(".market_listing_table_message").text().indexOf("There are no listings for this item.") !== -1) {
+                reject(new Error("Item not found."));
+                return;
+            }
 
-        request("GET", `listings/${appid}/${encodeURIComponent(item)}`, 
-            { qs: { 
-                filter: query
-                }
-            }, (err, html) => {
-                if (err) {
-                    reject(err);
+            const Item = new CMItem($, html, appid, item, query);
+            Item.update(error => {
+                if (error) {
+                    callback && callback(error);
+                    reject(error);
                     return;
                 }
-                const $ = cheerio.load(html);
-                
-                /* Looks if we have found any listings. Not sure if we should keep this, will do futher tests. */
-                if ($(".market_listing_table_message").text().indexOf("There are no listings for this item.") !== -1) {
-                    reject(new Error("Item not found."));
-                    return;
-                }
 
-                /* Using CMItem object to store the data */
-                const cmitem = new CMItem($, html, appid, item, query);
-                if (cmitem.commodity === true) cmitem.update(err => err ? reject(err) : accept(cmitem));
-                else accept(cmitem);
+                callback && callback(null, Item);
+                resolve(Item);
+            })
         })
     })
 }
@@ -120,6 +118,8 @@ class CMItem {
             /* We have to get the buyOrders using the update method */
             this.buyOrders = [];
             this.sellOrders = [];
+
+            this.histogram = null;
         }
     }
 
@@ -129,51 +129,45 @@ class CMItem {
      * @return {Promise.<Result>}  
      */
     update(callback) {
-        return Promises.callbackPromise([], callback, true, (accept, reject) => {
-            if (this.commodity) {
-                this.updatePriceForCommodity(cb);
-            } else {
-                this.updatePriceForNonCommodity(cb);
-            }
-
-            function cb(err, item) {
-                err ? reject(err) : accept(item);
-            }
-        })
+        return (this.commodity ? this.updatePriceForCommodity() : this.updatePriceForNonCommodity())
+            .then(() => {
+                callback && callback(null, this);
+                return this;
+            })
+            .catch(err => {
+                callback && callback(err);
+                return err;
+            })
     }
 
-    updatePriceForCommodity(callback) {
-        getMarketItemHistogram({
+    updatePriceForCommodity() {
+        return getMarketItemHistogram({
             item_nameid : this.commodityID,
             currency    : this.currency,
             language    : this.language,
             country     : this.country
-        }, (err, results) => {
-            if (err) {
-                callback(err);
-                return;
-            }
-            this.buyOrders = results.buyOrders;
-            this.sellOrders = results.sellOrders;
-
-            callback(null, results);
         })
+            .then(histogram => {
+                this.buyOrders = histogram.buyOrders;
+                this.sellOrders = histogram.sellOrders;
+                
+                this.histogram = histogram;
+
+                return this;
+            })
     }
 
-    updatePriceForNonCommodity(callback) {
-        getMarketItemListings(this.appid, this.item, {
+    updatePriceForNonCommodity() {
+        return getMarketItemListings(this.appid, this.item, {
             country : this.country,
             language: this.language,
             currency: this.currency            
-        }, (err, listings) => {
-            if (err) {
-                callback(err);
-                return;
-            }
-            this.listings = listings;
-            
-            callback(null, listings);
         })
+            .then(listings => {
+                this.listings = listings;
+                
+                return this;
+            })
     }
 }
 

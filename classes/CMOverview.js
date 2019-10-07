@@ -1,7 +1,6 @@
 const request = require("../request");
-const Promises = require("@doctormckay/stdlib").Promises;
 const CMEMarketCurrencies = require("../resources/CMEMarketCurrencies");
-const { parseCurrencyText } = require("./CMSearchItem");
+const { parseCurrencyText } = require("../helpers");
 
 /**
  * Gets the market overview
@@ -12,19 +11,20 @@ const { parseCurrencyText } = require("./CMSearchItem");
  * @return {Promise<CMOverview>}
  */
 const getMarketItemOverview = function(appid, hashName, qs, callback) {
-    return Promises.callbackPromise([], callback, false, (accept, reject) => {
-        if (typeof qs === "function") {
-            callback = qs;
-            qs = null;
-        }
-        
+    if (typeof qs === "function") {
+        callback = qs;
+        qs = null;
+    }
+    
+    return new Promise((resolve, reject) => {
         qs = qs || {}
         qs.appid = appid;
         qs["market_hash_name"] = hashName;
         qs.currency = qs.currency || CMEMarketCurrencies.USD;
-
+        
         request("GET", "priceoverview", { json: true, gzip: true, qs: qs }, (err, body) => {
             if (err) {
+                callback && callback(err);
                 reject(err);
                 return;
             }
@@ -36,7 +36,9 @@ const getMarketItemOverview = function(appid, hashName, qs, callback) {
                 newQS[param] = qs[param];
             }
 
-            accept( new CMOverview(appid, hashName, newQS, body) );          
+            const overview = new CMOverview(appid, hashName, newQS, body);
+            callback && callback(null, overview);
+            resolve( overview );          
         })
     })
 }
@@ -54,9 +56,9 @@ class CMOverview {
         this.appid = appid;
         this.item = item;
         this.qs = qs;
-
+        
         this.lowestPrice = parseCurrencyText(marketOverviewResults["lowest_price"]).price;
-        this.medianPrice = parseCurrencyText(marketOverviewResults["median_price"]).price || 0; 
+        this.medianPrice = parseCurrencyText(marketOverviewResults["median_price"]).price;
         this.volume = marketOverviewResults["volume"] || 0;
     }
 
@@ -66,19 +68,19 @@ class CMOverview {
      * @return {Promise.<Result>}  
      */
     update(callback) {
-        return Promises.callbackPromise([], true, callback, (accept, reject) => {
-            getMarketItemOverview(this.appid, this.item, this.qs, (err, overview) => {
-                if (err) {
-                    reject(err);
-                    return;
-                }
-                this.lowestPrice = overview.lowestPrice;
-                this.medianPrice = overview.medianPrice;
+        return getMarketItemOverview(this.appid, this.item, this.qs)
+            .then(overview => {
+                this.lowestPrice = parseCurrencyText(overview.lowestPrice).price;
+                this.medianPrice = parseCurrencyText(overview["median_price"]).price;
                 this.volume = overview.volume;
 
-                accept(overview);
+                callback && callback(null, this);
+                return this;
             })
-        })
+            .catch(err => {
+                callback && callback(err);
+                return err;
+            })
     }
 }
 

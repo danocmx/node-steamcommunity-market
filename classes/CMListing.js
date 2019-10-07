@@ -1,4 +1,3 @@
-const Promises = require("@doctormckay/stdlib").Promises;
 const request = require("../request");
 const CMEMarketCurrencies = require("../resources/CMEMarketCurrencies");
 
@@ -16,11 +15,12 @@ const CMEMarketCurrencies = require("../resources/CMEMarketCurrencies");
  * @return {Promise<[CEconListingItem]>}
  */
 const getMarketItemListings = function(appid, item, params, callback) {
-    return Promises.callbackPromise([], callback, true, (accept, reject) => {
-        if (typeof params === "function") {
-            callback = params;
-            params = null;
-        }
+    if (typeof params === "function") {
+        callback = params;
+        params = null;
+    }
+    
+    return new Promise((resolve, reject) => {
         item = encodeURI(item);
         
         params = params || {}
@@ -35,11 +35,14 @@ const getMarketItemListings = function(appid, item, params, callback) {
 
         request("GET", `listings/${appid}/${item}/render`, { json: true, gzip: true, qs: qs }, (err, response) => {
             if (err) {
+                callback && callback(err);
                 reject(err);
                 return;
             }
 
-            accept( sortListings(response) );
+            const listings = sortListings(response);
+            callback && callback(null, listings);
+            resolve( listings );
         })
     })
 }
