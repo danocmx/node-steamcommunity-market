@@ -12,11 +12,16 @@ const CMEMarketCurrencies = require("../resources/CMEMarketCurrencies");
  * @param {String} params.language  Language code
  * @param {String} params.country   Country code
  * @param {String} params.query     Search query
- * @param {function (err, listings)} callback
+ * @param {function (err, listings)} [callback]
  * @return {Promise<[CEconListingItem]>}
  */
 const getMarketItemListings = function(appid, item, params, callback) {
     return Promises.callbackPromise([], callback, true, (accept, reject) => {
+        if (typeof params === "function") {
+            callback = params;
+            params = null;
+        }
+
         item = encodeURI(item);
         
         params = params || {}

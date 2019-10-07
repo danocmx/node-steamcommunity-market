@@ -9,7 +9,7 @@ const { getMarketItemHistogram } = require("./CMHistogram");
  * @param {Number} appid    Steam AppID
  * @param {String} item     Market Hash Name
  * @param {String} query    Query search
- * @param {function(err, CMarketItem)}
+ * @param {function(err, CMarketItem)} [callback]
  * @return {Promise<CMarketItem>}
  */
 const getMarketItemPage = function(appid, item, query, callback) {
@@ -61,7 +61,6 @@ class CMItem {
      * @param {Number} appid            Steam appid
      * @param {String} item             Market hash name
      * @param {String} params.filter    Query for descriptions, etc... 
-     * @param {function (err, CMItem)} callback 
      */
     constructor($, body, appid, item, query) {
         this.appid = appid;

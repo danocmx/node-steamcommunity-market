@@ -9,7 +9,7 @@ const CMEMarketCurrencies = require("../resources/CMEMarketCurrencies");
  * @param {Number} params.currency      CMEMarketCurrencies code
  * @param {String} params.language      Language code
  * @param {String} params.country       Country code
- * @param {function (err, CMHistogram)} callback 
+ * @param {function (err, CMHistogram)} [callback] 
  * @return {Promise<[CMHistogram]>}
  */
 const getMarketItemHistogram = function(params, callback) {
@@ -53,7 +53,7 @@ class CMHistogram {
      * CMHistogram contructor
      * @param {Object} data from overview 
      */
-    constructor(data) {
+    constructor(qs, data) {
         /* TODO: will see if I want to keep these as Arrays or Objects */
         this.buyOrders = []
         for (let i = 0; i < data.buy_order_graph.length; i++) {
@@ -69,6 +69,28 @@ class CMHistogram {
 
         this.prefix = data.price_prefix;
         this.suffix = data.price_suffix;
+
+        this.qs = qs;
+    }
+
+    /**
+     * Updates the histogram
+     * @param {function(err, CMHistogramResults)} [callback]
+     * @return {Promise.<Result>}  
+     */
+    update(callback) {
+        return Promises.callbackPromise([], true, callback, (accept, reject) => {
+            getMarketItemHistogram(this.qs, (err, histogram) => {
+                if (err) {
+                    reject(err);
+                    return;
+                }
+                this.buyOrders = histogram.buyOrders;
+                this.sellOrders = histogram.sellOrders;
+                
+                accept(histogram);
+            })
+        })
     }
 
     /**

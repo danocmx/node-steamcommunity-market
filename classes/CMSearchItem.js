@@ -11,11 +11,16 @@ const getMarketItemPage = require("./CMItem");
  * @param {Number} params.count         How many search blocks we receive
  * @param {String} params.sortColumn    `quantity`, `price`, `name` which column the search sorts by
  * @param {String} params.sortDir       `acs`, `desc` directory of sorting
- * @param {function(err, [CMSearchItem])} callback 
+ * @param {function(err, [CMSearchItem])} [callback] 
  */
 function searchMarket(params, callback) {
+    if (typeof params === "function") {
+        callback = params;
+        params = null;
+    }
+
     /* Default values */
-    const qs = {}
+    params = params || {}
     qs.query = params.query || null;
     qs.appid = params.appid;
     qs.search_descriptions = params.searchDescriptions ? 1 : 0;

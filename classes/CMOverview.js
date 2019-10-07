@@ -6,11 +6,17 @@ const CMEMarketCurrencies = require("../resources/CMEMarketCurrencies");
  * @param {Number} appid        Steam AppID
  * @param {String} hashName     Market Hash Name
  * @param {Number} qs.currency  CMEMarketCurrencies code
- * @param {function(err, CMOverview)} callback
+ * @param {function(err, CMOverview)} [callback]
  * @return {Promise<CMOverview>}
  */
-const getMarketItemOverview = function(appid, hashName, qs = {}, callback) {
+const getMarketItemOverview = function(appid, hashName, qs, callback) {
     return Promises.callbackPromise([], callback, false, (accept, reject) => {
+        if (typeof qs === "function") {
+            callback = qs;
+            qs = null;
+        }
+        
+        qs = qs || {}
         qs.appid = appid;
         qs["market_hash_name"] = hashName;
         qs.currency = qs.currency || CMEMarketCurrencies.USD;
@@ -21,7 +27,14 @@ const getMarketItemOverview = function(appid, hashName, qs = {}, callback) {
                 return;
             }
 
-            accept( new CMOverview(body) );          
+            const newQS = {}
+            for (const param in qs) {
+                if (!qs.hasOwnProperty(param)) continue;
+                if (["appid", "market_hash_name"].includes(param)) continue;
+                newQS[param] = qs[param];
+            }
+
+            accept( new CMOverview(appid, hashName, newQS, body) );          
         })
     })
 }
@@ -35,10 +48,35 @@ class CMOverview {
      * Classifieds response data
      * @param {Object} marketOverviewResults what we receive from steam
      */
-    constructor(marketOverviewResults) {
+    constructor(appid, item, qs, marketOverviewResults) {
+        this.appid = appid;
+        this.item = item;
+        this.qs = qs;
+
         this.lowestPrice = marketOverviewResults["lowest_price"];
         this.medianPrice = marketOverviewResults["median_price"] || this.lowestPrice; 
         this.volume = marketOverviewResults["volume"] || 0;
+    }
+
+    /**
+     * Updates the overview
+     * @param {function(err, CMOverview)} [callback]
+     * @return {Promise.<Result>}  
+     */
+    update(callback) {
+        return Promises.callbackPromise([], true, callback, (accept, reject) => {
+            getMarketItemOverview(this.appid, this.item, this.qs, (err, overview) => {
+                if (err) {
+                    reject(err);
+                    return;
+                }
+                this.lowestPrice = overview.lowestPrice;
+                this.medianPrice = overview.medianPrice;
+                this.volume = overview.volume;
+
+                accept(overview);
+            })
+        })
     }
 }
 

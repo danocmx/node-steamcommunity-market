@@ -3,7 +3,7 @@ package-lock.json
 # No need to upload node_modules to git
 /node_modules
 # Hidden files from github
-test*
+/test
 hats.json
 storage.js
 # node-scm modules that are not yet ready
