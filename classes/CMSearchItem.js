@@ -21,6 +21,7 @@ function searchMarket(params, callback) {
 
     /* Default values */
     params = params || {}
+    const qs = {}
     qs.query = params.query || null;
     qs.appid = params.appid;
     qs.search_descriptions = params.searchDescriptions ? 1 : 0;

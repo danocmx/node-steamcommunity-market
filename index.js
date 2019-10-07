@@ -13,6 +13,7 @@ const EMarketCurrencies = require("./resources/CMEMarketCurrencies");
 /* TODO: 
 - Centralize, make a SCM class controlling the request limits
 - HTTP headers
+- JSDoc
 */
 
 /**

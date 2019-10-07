@@ -21,7 +21,6 @@ const getMarketItemListings = function(appid, item, params, callback) {
             callback = params;
             params = null;
         }
-
         item = encodeURI(item);
         
         params = params || {}
@@ -91,8 +90,8 @@ class CMListing {
         this.tradable = asset.tradable;
 
         /* Currency & Price info */
-        this.price = listinginfo["converted_price"] || listinginfo.price;
-        this.currency = listinginfo["converted_currencyid"] || listinginfo.currencyid;
+        this.price = parseFloat((listinginfo["converted_price"] || listinginfo.price) / 100);
+        this.currency = parseInt(((listinginfo["converted_currencyid"] || listinginfo.currencyid) + "").substr(1));
         this.fee = listinginfo["converted_fee"] || listinginfo.fee;
     }
 }

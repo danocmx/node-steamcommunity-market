@@ -1,6 +1,8 @@
 const request = require("../request");
 const Promises = require("@doctormckay/stdlib").Promises;
 const CMEMarketCurrencies = require("../resources/CMEMarketCurrencies");
+const { parseCurrencyText } = require("./CMSearchItem");
+
 /**
  * Gets the market overview
  * @param {Number} appid        Steam AppID
@@ -53,8 +55,8 @@ class CMOverview {
         this.item = item;
         this.qs = qs;
 
-        this.lowestPrice = marketOverviewResults["lowest_price"];
-        this.medianPrice = marketOverviewResults["median_price"] || this.lowestPrice; 
+        this.lowestPrice = parseCurrencyText(marketOverviewResults["lowest_price"]).price;
+        this.medianPrice = parseCurrencyText(marketOverviewResults["median_price"]).price || 0; 
         this.volume = marketOverviewResults["volume"] || 0;
     }
 

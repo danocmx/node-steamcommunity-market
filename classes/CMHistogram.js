@@ -12,15 +12,16 @@ const CMEMarketCurrencies = require("../resources/CMEMarketCurrencies");
  * @param {function (err, CMHistogram)} [callback] 
  * @return {Promise<[CMHistogram]>}
  */
-const getMarketItemHistogram = function(params, callback) {
+const getMarketItemHistogram = function(itemNameID, params, callback) {
     return Promises.callbackPromise([], callback, false, (accept, reject) => {
-        if (!params.hasOwnProperty("itemNameID")) {
-            reject(new Error("Set `itemNameID` property to it's id."));
-            return;
+        if (typeof params === "function") {
+            callback = params;
+            params = null;
         }
 
+        params = params || {}
         const qs = {
-            item_nameid : params.itemNameID,
+            item_nameid : itemNameID,
             two_factor  : params.twoFactor || 0,
             currency    : params.currency || CMEMarketCurrencies.USD,
             language    : params.language || "en",
@@ -39,7 +40,7 @@ const getMarketItemHistogram = function(params, callback) {
                 return;
             }
 
-            accept( new CMHistogram(response) );
+            accept( new CMHistogram(itemNameID, qs, response) );
         })
     })
 }
@@ -53,7 +54,7 @@ class CMHistogram {
      * CMHistogram contructor
      * @param {Object} data from overview 
      */
-    constructor(qs, data) {
+    constructor(itemNameID, qs, data) {
         /* TODO: will see if I want to keep these as Arrays or Objects */
         this.buyOrders = []
         for (let i = 0; i < data.buy_order_graph.length; i++) {
@@ -70,6 +71,7 @@ class CMHistogram {
         this.prefix = data.price_prefix;
         this.suffix = data.price_suffix;
 
+        this.itemNameID = itemNameID;
         this.qs = qs;
     }
 
@@ -80,7 +82,7 @@ class CMHistogram {
      */
     update(callback) {
         return Promises.callbackPromise([], true, callback, (accept, reject) => {
-            getMarketItemHistogram(this.qs, (err, histogram) => {
+            getMarketItemHistogram(this.itemNameID, this.qs, (err, histogram) => {
                 if (err) {
                     reject(err);
                     return;
