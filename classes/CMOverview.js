@@ -1,6 +1,6 @@
 const request = require("../request");
 const Promises = require("@doctormckay/stdlib").Promises;
-
+const CMEMarketCurrencies = require("../resources/CMEMarketCurrencies");
 /**
  * Gets the market overview
  * @param {Number} appid        Steam AppID
@@ -12,11 +12,8 @@ const Promises = require("@doctormckay/stdlib").Promises;
 const getMarketItemOverview = function(appid, hashName, qs = {}, callback) {
     return Promises.callbackPromise([], callback, false, (accept, reject) => {
         qs.appid = appid;
-        qs.hashName = hashName;
-
-        if (!("currency") in qs) {
-            qs.currency = this.options.currency;
-        }
+        qs["market_hash_name"] = hashName;
+        qs.currency = qs.currency || CMEMarketCurrencies.USD;
 
         request("GET", "priceoverview", { json: true, gzip: true, qs: qs }, (err, body) => {
             if (err) {
@@ -24,7 +21,7 @@ const getMarketItemOverview = function(appid, hashName, qs = {}, callback) {
                 return;
             }
 
-            accept( CMOverview(body) );          
+            accept( new CMOverview(body) );          
         })
     })
 }

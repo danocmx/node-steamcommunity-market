@@ -49,6 +49,10 @@ const getMarketItemHistogram = function(params, callback) {
  * @class CMHistogram
  */
 class CMHistogram {
+    /**
+     * CMHistogram contructor
+     * @param {Object} data from overview 
+     */
     constructor(data) {
         /* TODO: will see if I want to keep these as Arrays or Objects */
         this.buyOrders = []

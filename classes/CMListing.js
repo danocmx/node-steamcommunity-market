@@ -19,6 +19,7 @@ const getMarketItemListings = function(appid, item, params, callback) {
     return Promises.callbackPromise([], callback, true, (accept, reject) => {
         item = encodeURI(item);
         
+        params = params || {}
         const qs = {
             start   : params.start || 0,
             count   : params.count || undefined,
@@ -67,8 +68,8 @@ function sortListings({ assets, listinginfo }) {
 class CMListing {
     /**
      * Just gives us the necessery info
-     * @param {*} asset         Asset data
-     * @param {*} listinginfo   Currency & Price info
+     * @param {Object} asset         Asset data
+     * @param {Object} listinginfo   Currency & Price info
      */
     constructor(asset, listinginfo) {
         /* Asset info */

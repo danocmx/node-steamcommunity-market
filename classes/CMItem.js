@@ -2,7 +2,7 @@ const cheerio = require("cheerio");
 const request = require("../request");
 const Promises = require("@doctormckay/stdlib").Promises;
 const { sortListings, getMarketItemListings } =  require("./CMListing");
-const getMarketItemHistogram = require("./CMHistogram");
+const { getMarketItemHistogram } = require("./CMHistogram");
 
 /**
  * Gets the basic market item page
@@ -126,7 +126,7 @@ class CMItem {
 
     /**
      * Updates the price for the item
-     * @param {function(err, result)} callback Either CMHistogramResults or Array made of CEconListingItem
+     * @param {function(err, result)} [callback] Either CMHistogramResults or Array made of CEconListingItem
      * @return {Promise.<Result>}  
      */
     update(callback) {
@@ -154,7 +154,6 @@ class CMItem {
                 callback(err);
                 return;
             }
-
             this.buyOrders = results.buyOrders;
             this.sellOrders = results.sellOrders;
 
@@ -172,8 +171,8 @@ class CMItem {
                 callback(err);
                 return;
             }
-
             this.listings = listings;
+            
             callback(null, listings);
         })
     }

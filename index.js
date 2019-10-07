@@ -23,14 +23,14 @@ module.exports = {
     enums                   : {
         EMarketCurrencies: EMarketCurrencies
     },
-    classes : {
+    classes                 : {
         CMHistogram : CMHistogram.CMHistogram,
         CMItem      : CMItem.CMItem,
         CMListing   : CMListing.CMListing,
         CMOverview  : CMOverview.CMOverview,
         CMSearchItem: CMSearchItem.CMSearchItem
     },
-    utils   : {
+    utils                   : {
         sortListings    : CMListing.sortListings,
         getPriceToString: CMHistogram.getPriceToString
     },

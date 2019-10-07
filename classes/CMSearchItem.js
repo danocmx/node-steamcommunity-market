@@ -15,13 +15,14 @@ const getMarketItemPage = require("./CMItem");
  */
 function searchMarket(params, callback) {
     /* Default values */
-    qs.query = params.query ||  "";
+    const qs = {}
+    qs.query = params.query || null;
     qs.appid = params.appid;
     qs.search_descriptions = params.searchDescriptions ? 1 : 0;
     qs.start = params.start || 0;
     qs.count = params.count || 100;
     qs.sort_column = params.sortColumn || 'price';  // We really want to default sort by price
-    qs._sort_dir = params.sortDir || 'asc';         // Ascending
+    qs.sort_dir = params.sortDir || 'asc';          // Ascending
     qs.norender = 1                                 // Only norener to html
 
     /* We're giving right format to the custom appid params */
@@ -106,6 +107,10 @@ class CMSearchItem {
                 accept(item);
             })
         })
+    }
+
+    getOverview() {
+
     }
 }
 
