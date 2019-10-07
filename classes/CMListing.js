@@ -21,8 +21,8 @@ const getMarketItemListings = function(appid, item, params, callback) {
     }
     
     return new Promise((resolve, reject) => {
-        item = encodeURI(item);
-        
+        item = encodeURIComponent(item);
+
         params = params || {}
         const qs = {
             start   : params.start || 0,

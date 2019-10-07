@@ -54,7 +54,7 @@ function searchMarket(params, callback) {
             /* Using CMSearchItem object */
             const searchResults = [];
             for (let i = 0; i < search.results.length; i++) {
-                searchResults.push( new CMSearchItem(search.results[i]) );
+                searchResults.push( new CMSearchItem(search.results[i], qs) );
             }
 
             callback && callback(null, searchResults);
@@ -72,7 +72,7 @@ class CMSearchItem {
      * Classifies search data
      * @param {Object} searchItem JSON response from the API
      */
-    constructor(searchItem) {
+    constructor(searchItem, qs) {
         /* They should be fairly the same */
         this.name = searchItem.name;
         this.hashName = searchItem.hash_name;
@@ -102,11 +102,58 @@ class CMSearchItem {
         if (salePriceMatch) {
             this.sale = parseFloat(salePriceMatch[0]);
         }
-        /* For CMPage */
+
+        this.qs = {}
+        for (let param in qs) {
+            if (!qs.hasOwnProperty(param)) continue;
+            if (["query", "appid", "start", "count", "sort_column", "sort_dir", "norender"].includes(param)) continue;
+            this.qs[param] = qs[param];
+        }
+
+        /* For CM's */
         this.page = null;
         this.overview = null;
         this.listings = null;
         this.histogram = null;
+    }
+
+    updateSearchNode(callback) {
+        const qs = {
+            query: this.name,
+            appid: this.appid,
+            count: 1,
+            search_descriptions: this.qs.searchDescriptions,
+            ...this.qs
+        }
+        delete qs.search_descriptions;
+
+        return searchMarket(qs)
+            .then(search => {
+                const node = search[0];
+                if (!node) {
+                    return Promise.reject(new Error("Node was not found."));
+                }
+                
+                this.price = node.price;
+                this.amount = node.amount;
+                this.prefix = node.prefix;
+                this.suffix = node.suffix;
+                this.classid = node.classid;
+                this.instanceid = node.instanceid;
+                this.descriptions = node.descriptions;
+                this.marketTradableRestriction = node.marketTradableRestriction;
+                this.marketMarketableRestriction = node.marketMarketableRestriction;
+                this.marketable = node.marketable;
+                this.marketBuyCountryRestriction = node.marketBuyCountryRestriction;
+                this.sale = node.sale;
+
+                callback && callback(null, this);
+                return this;
+            })
+            .catch(err => {
+                callback && callback(err);
+                return err;
+            })
     }
 
     /**
@@ -114,8 +161,13 @@ class CMSearchItem {
      * @param {function(err, CMPage)} [callback] 
      * @return {Promise<CMPage>}
      */
-    getPage(callback) {
-        return getMarketItemPage(this.appid, this.hashName)
+    getPage(params, callback) {
+        if (typeof params === "function") {
+            callback = params;
+            params = null;
+        }
+
+        return getMarketItemPage(this.appid, this.hashName, params)
             .then(page => {
                 this.page = page;
                 
