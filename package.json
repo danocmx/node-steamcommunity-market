@@ -1,12 +1,17 @@
 {
   "name": "node-steamcommunity-tracker",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "",
   "main": "index.js",
   "scripts": {
     "test": "node index.js"
   },
-  "keywords": ["steam", "steamcommunity", "market", "steamcommunity.com/market"],
+  "keywords": [
+    "steam",
+    "steamcommunity",
+    "market",
+    "steamcommunity.com/market"
+  ],
   "author": "danocmx",
   "license": "ISC",
   "dependencies": {

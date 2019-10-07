@@ -43,7 +43,7 @@ function searchMarket(params, callback) {
 
             /* Using CMSearchItem object */
             const searchResults = [];
-            for (let i = 0; i < search.results; i++) {
+            for (let i = 0; i < search.results.length; i++) {
                 searchResults.push( new CMSearchItem(search.results[i]) );
             }
 
@@ -64,7 +64,7 @@ class CMSearchItem {
     constructor(searchItem) {
         /* They should be fairly the same */
         this.name = searchItem.name;
-        this.hashName = searchItem.hashName;
+        this.hashName = searchItem.hash_name;
         /* Amount & Price */
         this.amount = searchItem["sell_listings"];
         this.price = searchItem["sell_price"];
@@ -79,14 +79,18 @@ class CMSearchItem {
         this.instanceid = assets.instanceid;
         this.descriptions = assets.descriptions;
         /* Icon URL */
-        this.icon = `https://steamcommunity-a.akamaihd.net/economy/image/${assets["icon_url"]}`;
+        this.iconUrl = `https://steamcommunity-a.akamaihd.net/economy/image/${assets["icon_url"]}`;
         /* Market info */
         this.commodity = assets.commodity === 1 ? true : false;
-        this.marketTradableRestriction = assets.market_tradable_restriction;
+        this.marketTradableRestriction = assets.market_tradable_restriction || 0;
+        this.marketMarketableRestriction = assets.market_marketable_restriction || 0;
         this.marketable = assets.marketable;
-        this.marketBuyCountryRestriction = assets.market_buy_country_restriction;
+        this.marketBuyCountryRestriction = assets.market_buy_country_restriction || null;
         /* Last sale info */
-        this.salePrice = parseFloat(assets["sale_price_text"].match(/\d+[,.]?\d*/));
+        const salePriceMatch = searchItem["sale_price_text"] ? searchItem["sale_price_text"].match(/\d+[,.]?\d*/) : null;
+        if (salePriceMatch) {
+            this.sale = parseFloat(salePriceMatch[0]);
+        }
         /* For CMPage */
         this.page = null;
     }
