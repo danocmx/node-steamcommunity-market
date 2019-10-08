@@ -89,7 +89,8 @@ class CMListing {
     constructor(asset, listinginfo) {
         /* Asset info */
         this.appid = asset.appid;
-        this.name = asset.market_name;
+        this.name = asset.name;
+        this.marketName = asset.market_name;
         this.hashName = asset.market_hash_name;
         this.type = asset.type;
         this.id = asset.id;
@@ -100,6 +101,9 @@ class CMListing {
         this.descriptions = asset.descriptions;
         this.actions = asset.actions;
         this.commodity = asset.commodity;
+        /* Actions */
+        this.actions = asset.actions;
+        this.marketActions = asset.market_actions;
         /* Market properties */
         this.tradable = asset.tradable;
         this.marketable = asset.marketable;
