@@ -24,7 +24,7 @@ function req(method, endpoint, params, callback) {
         },
         ...params                                   // Rewrites previous params if necessery
     }
-    console.log(options);
+
     request(options, (err, response, body) => {
         if (err) {
             callback(err);

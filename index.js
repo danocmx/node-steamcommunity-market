@@ -22,14 +22,14 @@ const ECMCurrencies = require("./resources/ECMCurrencies");
  */
 module.exports = {
     enums                   : {
-        ECMCurrencies: ECMCurrencies
+        ECMCurrencies   : ECMCurrencies
     },
     classes                 : {
-        CMHistogram : CMHistogram.CMHistogram,
-        CMItem      : CMItem.CMItem,
-        CMListing   : CMListing.CMListing,
-        CMOverview  : CMOverview.CMOverview,
-        CMSearchItem: CMSearchItem.CMSearchItem
+        CMHistogram     : CMHistogram.CMHistogram,
+        CMItem          : CMItem.CMItem,
+        CMListing       : CMListing.CMListing,
+        CMOverview      : CMOverview.CMOverview,
+        CMSearchItem    : CMSearchItem.CMSearchItem
     },
     utils                   : {
         sortListings    : CMListing.sortListings,
