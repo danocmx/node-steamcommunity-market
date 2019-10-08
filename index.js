@@ -14,7 +14,6 @@ const EMarketCurrencies = require("./resources/ECMCurrencies");
 - Centralize, make a SCM class controlling the request limits
 - HTTP headers
 - JSDoc
-- currency problem
 */
 
 /**

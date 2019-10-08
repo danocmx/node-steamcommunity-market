@@ -10,3 +10,5 @@ storage.js
 /components
 # Hidden example scripts
 /base-scripts
+# JSDoc
+/out
