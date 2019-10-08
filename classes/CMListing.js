@@ -91,7 +91,7 @@ class CMListing {
         this.appid = asset.appid;
         this.name = asset.name;
         this.marketName = asset.market_name;
-        this.hashName = asset.market_hash_name;
+        this.marketHashName = asset.market_hash_name;
         this.type = asset.type;
         this.id = asset.id;
         this.classid = asset.classid;

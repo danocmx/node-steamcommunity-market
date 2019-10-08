@@ -113,7 +113,7 @@ class CMItem {
      * @return {Promise.<Result>}  
      */
     update(callback) {
-        return (this.commodity ? this.updatePriceForCommodity() : this.updatePriceForNonCommodity())
+        return (this.commodity ? this.getHistogram() : this.getListings())
             .then(() => {
                 callback && callback(null, this);
                 return this;
@@ -124,7 +124,7 @@ class CMItem {
             })
     }
 
-    updatePriceForCommodity() {
+    getHistogram() {
         return getMarketItemHistogram({
             item_nameid : this.commodityID,
             currency    : this.currency,
@@ -141,7 +141,7 @@ class CMItem {
             })
     }
 
-    updatePriceForNonCommodity() {
+    getListings() {
         return getMarketItemListings(this.appid, this.item, {
             country : this.country,
             language: this.language,
