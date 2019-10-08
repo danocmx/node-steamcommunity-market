@@ -1,5 +1,5 @@
 const request = require("../request");
-const CMEMarketCurrencies = require("../resources/CMEMarketCurrencies");
+const { ECMCurrencyCodes } = require("../resources/ECMCurrencies");
 
 /**
  * Gets histogram listings, they contain less info and require item_nameid property to be searched
@@ -22,7 +22,7 @@ const getMarketItemHistogram = function(itemNameID, params, callback) {
         const qs = {
             item_nameid : itemNameID,
             two_factor  : params.twoFactor || 0,
-            currency    : params.currency || CMEMarketCurrencies.USD,
+            currency    : params.currency || ECMCurrencyCodes.USD,
             language    : params.language || "en",
             country     : params.country || "us"
         }

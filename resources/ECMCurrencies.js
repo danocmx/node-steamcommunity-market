@@ -2,7 +2,7 @@
  * Community market's codes for currencies, makes it search to read/search for.
  * @enum CMEMarketCurrencies
  */
-module.exports = {
+exports.ECMCurrencyCodes = {
     "USD": 1,
     "GBP": 2,
     "EUR": 3,
@@ -14,4 +14,17 @@ module.exports = {
     3: "EUR",
     4: "CHF",
     5: "RUB"
+}
+
+exports.ECMCurrencySigns = {
+    "USD": "$",
+    "GBP": "£",
+    "EUR": "€",
+    "CHF": "CHF",
+    "RUB": "pуб.",
+
+    "$": "USD",
+    "£": "GBP",
+    "€": "EUR",
+    "pуб.": "RUB"
 }

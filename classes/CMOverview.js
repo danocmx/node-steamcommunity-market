@@ -1,12 +1,12 @@
 const request = require("../request");
-const CMEMarketCurrencies = require("../resources/CMEMarketCurrencies");
+const { ECMCurrencyCodes } = require("../resources/ECMCurrencies");
 const { parseCurrencyText } = require("../helpers");
 
 /**
  * Gets the market overview
  * @param {Number} appid        Steam AppID
  * @param {String} hashName     Market Hash Name
- * @param {Number} qs.currency  CMEMarketCurrencies code
+ * @param {Number} qs.currency  ECMCurrencyCodes code
  * @param {function(err, CMOverview)} [callback]
  * @return {Promise<CMOverview>}
  */
@@ -20,7 +20,7 @@ const getMarketItemOverview = function(appid, hashName, qs, callback) {
         qs = qs || {}
         qs.appid = appid;
         qs["market_hash_name"] = hashName;
-        qs.currency = qs.currency || CMEMarketCurrencies.USD;
+        qs.currency = qs.currency || ECMCurrencyCodes.USD;
         
         request("GET", "priceoverview", { json: true, gzip: true, qs: qs }, (err, body) => {
             if (err) {

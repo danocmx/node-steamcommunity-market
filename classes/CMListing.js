@@ -1,5 +1,5 @@
 const request = require("../request");
-const CMEMarketCurrencies = require("../resources/CMEMarketCurrencies");
+const { ECMCurrencyCodes } = require("../resources/ECMCurrencies");
 
 /**
  * Gets listings from scm, only includes sellOrders and is descriptive
@@ -7,7 +7,7 @@ const CMEMarketCurrencies = require("../resources/CMEMarketCurrencies");
  * @param {String} item             Market Hash Name
  * @param {Number} params.start     From which listings search starts
  * @param {Number} params.count     How many listings we want (Amount)
- * @param {Number} params.currency  CMEMarketCurrencies code
+ * @param {Number} params.currency  ECMCurrencyCodes code
  * @param {String} params.language  Language code
  * @param {String} params.country   Country code
  * @param {String} params.query     Search query
@@ -29,7 +29,7 @@ const getMarketItemListings = function(appid, item, params, callback) {
             count   : params.count || undefined,
             country : params.country || "us",
             language: params.language || "en",
-            currency: params.currency || CMEMarketCurrencies.USD,
+            currency: params.currency || ECMCurrencyCodes.USD,
             query   : params.query || undefined
         }
 
@@ -41,6 +41,14 @@ const getMarketItemListings = function(appid, item, params, callback) {
             }
 
             const listings = sortListings(response);
+            if (listings.length < 1) {
+                const noListingsError = new Error("No listings were found.");
+                noListingsError.code = "NO_LISTINGS_FOUND";
+                callback && callback(noListingsError);
+                reject(noListingsError);
+                return;
+            }
+
             callback && callback(null, listings);
             resolve( listings );
         })
@@ -90,12 +98,23 @@ class CMListing {
         this.amount = asset.amount;
         this.iconUrl = asset.icon_url;
         this.descriptions = asset.descriptions;
+        this.actions = asset.actions;
+        this.commodity = asset.commodity;
+        /* Market properties */
         this.tradable = asset.tradable;
-
+        this.marketable = asset.marketable;
+        this.marketTradableRestriction = asset["market_tradable_restriction"] || 0
+        this.marketMarketableRestriction = asset["market_marketable_restriction"] || 0
+        this.marketBuyCountryRestriction = asset["market_buy_country_restriction"] || null;
         /* Currency & Price info */
-        this.price = parseFloat((listinginfo["converted_price"] || listinginfo.price) / 100);
+        this.listingid = listinginfo.listingid;
+        
+        const fee = listinginfo["converted_fee"] || listinginfo.fee;
+        const price = listinginfo["converted_price"] || listinginfo.price;
+        this.fee = fee / 100;
+        this.price = (price + fee) / 100;
+        
         this.currency = parseInt(((listinginfo["converted_currencyid"] || listinginfo.currencyid) + "").substr(1));
-        this.fee = listinginfo["converted_fee"] || listinginfo.fee;
     }
 }
 

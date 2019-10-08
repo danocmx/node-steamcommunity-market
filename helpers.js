@@ -1,3 +1,5 @@
+const { ECMCurrencySigns, ECMCurrencyCodes } = require("../resources")
+
 /**
  * Parses the currency text
  * @param {String} currencyText from the search render
@@ -8,6 +10,12 @@ function parseCurrencyText(currencyText) {
     return { prefix: match[1], suffix: match[3], price: parseFloat(match[2]) };
 }
 
+function convertCurrencySign(prefix, suffix) {
+    const fix = prefix || suffix;
+    return ECMCurrencyCodes[ ECMCurrencySigns[fix] ];
+}
+
 module.exports = {
-    parseCurrencyText: parseCurrencyText
+    parseCurrencyText   : parseCurrencyText,
+    convertCurrencySign : convertCurrencySign
 }

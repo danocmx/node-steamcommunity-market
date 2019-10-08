@@ -8,12 +8,13 @@ const CMOverview = require("./classes/CMOverview");
 const CMSearchItem = require("./classes/CMSearchItem");
 
 /* Enums */
-const EMarketCurrencies = require("./resources/CMEMarketCurrencies");
+const EMarketCurrencies = require("./resources/ECMCurrencies");
 
 /* TODO: 
 - Centralize, make a SCM class controlling the request limits
 - HTTP headers
 - JSDoc
+- currency problem
 */
 
 /**
