@@ -3,7 +3,7 @@ const { ECMCurrencyCodes } = require("../resources/ECMCurrencies");
 
 /**
  * Gets histogram listings, they contain less info and require item_nameid property to be searched
- * @param {Number} params.item_nameid   Special id property
+ * @param {Number} itemNameID          Special id property
  * @param {Number} params.two_factor    Defaults to 0, unknown
  * @param {Number} params.currency      CMEMarketCurrencies code
  * @param {String} params.language      Language code
@@ -101,18 +101,18 @@ class CMHistogram {
      * Gets the lowest buy order from buyOrders
      */
     getLowestBuyOrder() {
-        const price = Math.min(...this.buyOrders.map(buyOrder => buyOrder[0]));
+        const price = Math.max(...this.buyOrders.map(buyOrder => buyOrder[0]));
         const amount = ( this.buyOrders.some(buyOrder => buyOrder[0] == price) || [] )[1];
-        return { price: price === Infinity ? 0 : price, amount: amount || 0 }
+        return { price: price === -Infinity ? 0 : price, amount: amount || 0 }
     }
 
     /**
      * Gets the highest sell order from sellOrders
      */
-    getHighestSellOrders() {
-        const price = Math.max(...this.sellOrders.map(sellOrder => sellOrder[0]));
+    getHighestSellOrder() {
+        const price = Math.min(...this.sellOrders.map(sellOrder => sellOrder[0]));
         const amount = ( this.sellOrders.some(sellOrder => sellOrder[0] == price) );
-        return { price: price === -Infinity ? 0 : price, amount: amount || 0 }
+        return { price: price === Infinity ? 0 : price, amount: amount || 0 }
     }
 }
 
