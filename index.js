@@ -8,7 +8,7 @@ const CMOverview = require("./classes/CMOverview");
 const CMSearchItem = require("./classes/CMSearchItem");
 
 /* Enums */
-const EMarketCurrencies = require("./resources/ECMCurrencies");
+const ECMCurrencies = require("./resources/ECMCurrencies");
 
 /* TODO: 
 - Centralize, make a SCM class controlling the request limits
@@ -22,7 +22,7 @@ const EMarketCurrencies = require("./resources/ECMCurrencies");
  */
 module.exports = {
     enums                   : {
-        EMarketCurrencies: EMarketCurrencies
+        ECMCurrencies: ECMCurrencies
     },
     classes                 : {
         CMHistogram : CMHistogram.CMHistogram,

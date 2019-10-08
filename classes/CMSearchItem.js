@@ -29,7 +29,7 @@ function searchMarket(params, callback) {
     qs.appid = params.appid;
     qs.search_descriptions = params.searchDescriptions ? 1 : 0;
     qs.start = params.start || 0;
-    qs.count = params.count || 100;
+    qs.count = params.count;
     qs.sort_column = params.sortColumn || 'price';  // We really want to default sort by price
     qs.sort_dir = params.sortDir || 'asc';          // Ascending
     qs.norender = 1                                 // Only norener to html
@@ -42,7 +42,7 @@ function searchMarket(params, callback) {
             qs[`category_${qs.appid}_${param}[]`] = `tag_${params[param]}`;
         }
     }
-
+    
     return new Promise((resolve, reject) => {
         request("GET", "search/render", { json: true, gzip: true, qs: qs }, (err, search) => {
             if (err) {
@@ -279,7 +279,7 @@ class CMSearchItem {
 
                 this.price = firstListing.price
                 this.amount = !firstListing.commodity ? firstListing.length : this.amount;
-                this.amountUpdated = false;
+                this.amountUpdated = !firstListing.commodity ? true : false;
                 /* Market properties */
                 this.tradable = firstListing.tradable;
                 this.marketable = firstListing.marketable;
