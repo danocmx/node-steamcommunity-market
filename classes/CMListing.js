@@ -84,7 +84,7 @@ function getMarketItemListingsCallback(appid, marketHashName, qs, fetchMore, cal
         /* Checks how many more do we need to search for */
         const celling = typeof fetchMore == "number" && fetchMore < total_count ? fetchMore : total_count;
         pagesize = parseInt(pagesize);
-        if (qs.start + pagesize < celling) {
+        if ((qs.start + pagesize < celling) && fetchMore) {
             
             qs.start += pagesize;                               // Current amount
             const toSearchFor = celling - qs.start;             // How many are we missing
