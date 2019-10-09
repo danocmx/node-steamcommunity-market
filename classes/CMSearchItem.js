@@ -104,9 +104,9 @@ function searchMarketCallback(params, fetchMore, callback, searchResults) {
         }
 
         /* Checks how many more do we need to search for */
-        const celling = typeof fetchMore === "number" && fetchMore < total_count ? fetchMore : total_count;
+        const celling = fetchMore && typeof fetchMore === "number" < total_count ? fetchMore : total_count;
         pagesize = parseInt(pagesize);
-        if (params.start + pagesize < celling) {
+        if ((params.start + pagesize < celling) && fetchMore) {
 
             params.start += pagesize;                               // Current amount
             const toSearchFor = celling - params.start;             // How many are we missing

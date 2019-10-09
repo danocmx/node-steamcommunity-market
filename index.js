@@ -17,6 +17,7 @@ const Helpers = require("./helpers");
 - Centralize, make a SCM class controlling the requests 
 - HTTP headers
 - centralize all known errors by steam
+- return loop listings after error
 - add embeding?
 */
 

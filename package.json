@@ -1,6 +1,6 @@
 {
-  "name": "node-steamcommunity-market",
-  "version": "2.3.0",
+  "name": "steamcommunity-market",
+  "version": "2.3.1",
   "description": "Gets data from steamcommunity market's API & Pages.",
   "main": "index.js",
   "scripts": {
