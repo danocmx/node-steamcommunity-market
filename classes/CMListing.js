@@ -2,78 +2,107 @@ const request = require("../request");
 const { ECMCurrencyCodes } = require("../resources/ECMCurrencies");
 
 /**
- * Gets listings from scm, only includes sellOrders and is descriptive
- * @param {Number} appid            Steam AppID
- * @param {String} item             Market Hash Name
- * @param {Number} params.start     From which listings search starts
- * @param {Number} params.count     How many listings we want (Amount)
- * @param {Number} params.currency  ECMCurrencyCodes code
- * @param {String} params.language  Language code
- * @param {String} params.country   Country code
- * @param {String} params.query     Search query
- * @param {function (err, listings)} [callback]
- * @return {Promise<[CEconListingItem]>}
+ * Gets descriptive sellOrders from SCM
+ * @param {Number} appid                            Steam AppID
+ * @param {String} marketHashName                             
+ * @param {Object} [params]                         Query string parameters
+ * @param {Number} [params.start=0]                 From which listings search starts
+ * @param {Number} [params.count]                   How many listings we want (Amount)
+ * @param {ECMCurrencyCodes} [params.currency=USD]  ECMCurrencyCodes code
+ * @param {String} [params.language="english"]      Language name
+ * @param {String} [params.country="us"]            Country code
+ * @param {String} [params.query]                   Search query
+ * @param {function (Error, CMListing[])} [callback]
+ * @return {Promise<CMListing[]>}
  */
-const getMarketItemListings = function(appid, item, params, callback) {
+const getMarketItemListings = function(appid, marketHashName, params, callback) {
     if (typeof params === "function") {
         callback = params;
         params = null;
     }
     
     return new Promise((resolve, reject) => {
-        item = encodeURIComponent(item);
+        marketHashName = encodeURIComponent(marketHashName);
 
-        params = params || {}
-        const qs = {
-            start   : params.start || 0,
-            count   : params.count || undefined,
-            country : params.country || "us",
-            language: params.language || "en",
-            currency: params.currency || ECMCurrencyCodes.USD,
-            query   : params.query || undefined
-        }
+        /* Default values */
+        params = { ...params } || {}
+        params.start = params.start || 0;
+        params.country = params.country || "us";
+        params.language = params.language || "english";
+        params.currency = params.currency || ECMCurrencyCodes.USD;
+        params.query = params.query || undefined;
 
-        request("GET", `listings/${appid}/${item}/render`, { json: true, gzip: true, qs: qs }, (err, response) => {
+        /* Indicates if we want to loop */
+        let fetchMore;
+        if (params.count > 100) fetchMore = parseInt(params.count);
+        else if (params.count == undefined) fetchMore = true;
+        else fetchMore = false;
+        params.count = fetchMore ? 100 : params.count;
+
+        getMarketItemListingsCallback(appid, marketHashName, params, fetchMore, (err, listings) => {
             if (err) {
                 callback && callback(err);
                 reject(err);
                 return;
             }
 
-            const listings = sortListings(response);
-            if (listings.length < 1) {
-                const noListingsError = new Error("No listings were found.");
-                noListingsError.code = "NO_LISTINGS_FOUND";
-                callback && callback(noListingsError);
-                reject(noListingsError);
-                return;
-            }
-
             callback && callback(null, listings);
-            resolve( listings );
-        })
+            resolve(listings);
+        });
     })
 }
 
 /**
- * Sorts listings in a better manner in one object
- * @param {Object} param0.assets        Steam asset object we receive from their API's
- * @param {Object} param0.listinginfo   SCM listing info including all currency info
- * @return {Object}                     A CEconListingItem instance
+ * Callback version of getMarketItemListings for the purpose of looping
+ * @private
+ * @see getMarketItemListings
  */
-function sortListings({ assets, listinginfo }) {
-    const listings = []
-    for (let listingID in listinginfo) {
-        if (!listinginfo.hasOwnProperty(listingID) || listingID === "purchaseinfo") continue;
-        const listing = listinginfo[listingID];
-
-        const { appid, contextid, id } = listing.asset;
-
-        const asset = assets[appid][contextid][id];
-        listings.push(new CMListing(asset, listing) );
+function getMarketItemListingsCallback(appid, marketHashName, qs, fetchMore, callback, listings) {
+    /* Adds the start to fetchMore so we get the actual amount */
+    if (!listings && fetchMore == "number") {
+        fetchMore += qs.start;
     }
 
-    return listings;
+    request("GET", `listings/${appid}/${marketHashName}/render`, { json: true, gzip: true, qs: qs }, (err, { listinginfo, assets, pagesize, total_count }) => {
+        if (err) {
+            callback(err);
+            return;
+        }
+
+        /* Pushes listings to the listings array */
+        listings = listings || [];
+        for (let listingID in listinginfo) {
+            if (!listinginfo.hasOwnProperty(listingID) || listingID === "purchaseinfo") continue;
+            const listing = listinginfo[listingID];
+    
+            const { appid, contextid, id } = listing.asset;
+    
+            const asset = assets[appid][contextid][id];
+            listings.push(new CMListing(asset, listing) );
+        }
+
+        /* Checks how many more do we need to search for */
+        const celling = typeof fetchMore == "number" && fetchMore < total_count ? fetchMore : total_count;
+        pagesize = parseInt(pagesize);
+        if (qs.start + pagesize < celling) {
+            
+            qs.start += pagesize;                               // Current amount
+            const toSearchFor = celling - qs.start;             // How many are we missing
+            qs.count = toSearchFor < 100 ? toSearchFor : 100;   // How many are we searching for
+
+            /* Watch for callstackExceededError */
+            getMarketItemListingsCallback(appid, marketHashName, qs, fetchMore, callback, listings);
+            return;
+        }
+
+        /* If there are no listings we throw an Error */
+        if (listings.length < 1) {
+            callback(new Error("No listings were found."));
+            return;
+        }
+
+        callback(null, listings);
+    })
 }
 
 /**
@@ -81,10 +110,12 @@ function sortListings({ assets, listinginfo }) {
  * @class CMListing
  */
 class CMListing {
+    
     /**
      * Just gives us the necessery info
-     * @param {Object} asset         Asset data
-     * @param {Object} listinginfo   Currency & Price info
+     * @constructor
+     * @param {Object} asset         Asset data from API
+     * @param {Object} listinginfo   Currency & Price info from API
      */
     constructor(asset, listinginfo) {
         /* Asset info */
@@ -127,6 +158,5 @@ class CMListing {
  */
 module.exports = {
     CMListing               : CMListing,
-    getMarketItemListings   : getMarketItemListings,
-    sortListings            : sortListings,
+    getMarketItemListings   : getMarketItemListings
 };

@@ -3,13 +3,14 @@ const { ECMCurrencyCodes } = require("../resources/ECMCurrencies");
 
 /**
  * Gets histogram listings, they contain less info and require item_nameid property to be searched
- * @param {Number} itemNameID          Special id property
- * @param {Number} params.two_factor    Defaults to 0, unknown
- * @param {Number} params.currency      CMEMarketCurrencies code
- * @param {String} params.language      Language code
- * @param {String} params.country       Country code
- * @param {function (err, CMHistogram)} [callback] 
- * @return {Promise<[CMHistogram]>}
+ * @param {Number} itemNameID                       Special id property you can only get from scraping the main item page
+ * @param {Object} [params]               
+ * @param {Number} [params.two_factor=0]            Defaults to 0, unknown
+ * @param {ECMCurrencyCodes} [params.currency=USD]  CMEMarketCurrencies code
+ * @param {String} [params.language="english"]      Language name
+ * @param {String} [params.country="us"]            Country code
+ * @param {function (Error, CMHistogram)} [callback] 
+ * @return {Promise<CMHistogram>}       
  */
 const getMarketItemHistogram = function(itemNameID, params, callback) {
     if (typeof params === "function") {
@@ -18,29 +19,30 @@ const getMarketItemHistogram = function(itemNameID, params, callback) {
     }
 
     return new Promise((resolve, reject) => {
-        params = params || {}
-        const qs = {
-            item_nameid : itemNameID,
-            two_factor  : params.twoFactor || 0,
-            currency    : params.currency || ECMCurrencyCodes.USD,
-            language    : params.language || "en",
-            country     : params.country || "us"
+        /* Validates the itemNameID variable */
+        if (!itemNameID && itemNameID != 0) {
+            const noItemNameIDError = new Error("No itemNameID set.");
+            callback && callback(noItemNameIDError);
+            reject(noItemNameIDError);
+            return;
         }
-        /* Incase you find some other query strings */
-        for (const param in params) {
-            if (params.hasOwnProperty(param)) continue;
-            if (["itemNameID", "twoFactor", "currency", "language", "country"].includes(param)) continue;
-            qs[param] = params[param];
-        }
-    
-        request("GET", "itemordershistogram",  { json: true, gzip: true, qs: qs }, (err, response) => {
+
+        /* Default values */
+        params = { ...params } || {}
+        params.item_nameid = itemNameID;
+        params.two_factor = params.two_factor || 0;
+        params.currency = params.currency || ECMCurrencyCodes.USD;
+        params.language = params.language || "english";
+        params.country = params.country || "us";
+
+        request("GET", "itemordershistogram",  { json: true, gzip: true, qs: params }, (err, response) => {
             if (err) {
                 callback && callback(err);
                 reject(err);
                 return;
             }
     
-            const histogramItem = new CMHistogram(itemNameID, qs, response)
+            const histogramItem = new CMHistogram(itemNameID, params, response)
             callback && callback(null, histogramItem);
             resolve( histogramItem );
         })
@@ -52,12 +54,15 @@ const getMarketItemHistogram = function(itemNameID, params, callback) {
  * @class CMHistogram
  */
 class CMHistogram {
+    
     /**
-     * CMHistogram contructor
-     * @param {Object} data from overview 
+     * @constructor
+     * @param {String} itemNameID   From getMarketItemHistogram
+     * @param {Object} qs           From getMarketItemHistogram
+     * @param {Object} data         From the API
      */
-    constructor(itemNameID, qs, data) {
-        /* TODO: will see if I want to keep these as Arrays or Objects */
+    constructor(itemNameID, params, data) {
+        /* buyOrders & sellOrders [price, amount][]*/
         this.buyOrders = []
         for (let i = 0; i < data.buy_order_graph.length; i++) {
             const buyOrder = data.buy_order_graph[i];
@@ -73,20 +78,28 @@ class CMHistogram {
         this.prefix = data.price_prefix;
         this.suffix = data.price_suffix;
 
+        /* For update method */
         this.itemNameID = itemNameID;
-        this.qs = qs;
+        this.params = params;
+
+        delete params.item_nameid;
     }
 
     /**
      * Updates the histogram
-     * @param {function(err, CMHistogramResults)} [callback]
-     * @return {Promise.<Result>}  
+     * @param {Object} [params]                                 Same as getMarketItemHistogram
+     * @param {function(Error, CMHistogramResults)} [callback]
+     * @return {Promise<CMHistogramResults>}  
      */
-    update(callback) {
-        return getMarketItemHistogram(this.itemNameID, this.qs)
+    update(params, callback) {
+        if (typeof params === "function") {
+            callback = params;
+            params = null;
+        }
+
+        return getMarketItemHistogram(this.itemNameID, params || this.params)
             .then(histogram => {
-                this.sellOrders = histogram.sellOrders;
-                this.buyOrders = histogram.buyOrders;
+                this.updateFromObject(histogram);
 
                 callback && callback(null, this);
                 return this;
@@ -95,6 +108,18 @@ class CMHistogram {
                 callback && callback(err);
                 return err;
             })
+    }
+
+    /**
+     * Rewrites the old data
+     * @param {CMHistogram} histogram
+     */
+    updateFromObject(histogram) {
+        this.sellOrders = histogram.sellOrders;
+        this.buyOrders = histogram.buyOrders;
+        this.prefix = histogram.prefix;
+        this.suffix = histogram.suffix;
+        this.params = histogram.params; // Only if user chooses to change the language, currency, country codes
     }
 
     /**
@@ -117,18 +142,9 @@ class CMHistogram {
 }
 
 /**
- * Contructs price with prefix & suffix
- * @param {Number} price 
- * @return {String} price with prefix and/or suffix 
+ * @package
  */
-function getPriceToString(price) {
-    if (this.prefix) price = this.prefix + price;
-    if (this.suffix) price += this.suffix;
-    return price;
-}
-
 module.exports = {
     CMHistogram             : CMHistogram,
-    getMarketItemHistogram  : getMarketItemHistogram,
-    getPriceToString        : getPriceToString
+    getMarketItemHistogram  : getMarketItemHistogram
 }

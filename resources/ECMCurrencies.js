@@ -17,14 +17,20 @@ exports.ECMCurrencyCodes = {
 }
 
 exports.ECMCurrencySigns = {
+    "$"     : "USD",
+    "£"     : "GBP",
+    "€"     : "EUR",
+    "CHF"   : "CHF",
+    "pуб."  : "RUB"
+}
+
+exports.ECMCurrencyPrefixes = {
     "USD": "$",
     "GBP": "£",
-    "EUR": "€",
-    "CHF": "CHF",
-    "RUB": "pуб.",
+    "CHF": "CHF"
+}
 
-    "$": "USD",
-    "£": "GBP",
-    "€": "EUR",
-    "pуб.": "RUB"
+exports.ECMCurrencySuffixes = {
+    "EUR": "€",
+    "RUB": "pуб.",
 }

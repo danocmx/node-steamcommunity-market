@@ -6,39 +6,42 @@ const { ECMCurrencyCodes } = require("../resources/ECMCurrencies");
 
 /**
  * Gets the basic market item page
- * @param {Number} appid    Steam AppID
- * @param {String} item     Market Hash Name
- * @param {String} params   
- * @param {function(err, CMarketItem)} [callback]
+ * @param {Number} appid                            Steam AppID
+ * @param {String} marketHashName                             
+ * @param {Object} [params]                         Parameters for the request
+ * @param {String} [params.query]                   Query search for the item
+ * @param {ECMCurrencyCodes} [params.currency=USD] 
+ * @param {String} [params.language="english"] 
+ * @param {String} [params.country="us"]
+ * @param {function(Error, CMarketItem)} [callback]
  * @return {Promise<CMarketItem>}
  */
-const getMarketItemPage = function(appid, item, params, callback) {
+const getMarketItemPage = function(appid, marketHashName, params, callback) {
     if (typeof params == "function") {
         callback = params;
         params = null;
     }
 
     return new Promise((resolve, reject) => {
-        params = params || {}
+        params = { ...params } || {}
         params.query = params.query || undefined;
-        params.currency = params.currency || ECMCurrencyCodes.USD
         
-        request("GET", `listings/${appid}/${encodeURIComponent(item)}`, { qs: { filter: params.query } }, (err, html) => {
+        request("GET", `listings/${appid}/${encodeURIComponent(marketHashName)}`, { qs: { filter: params.query } }, (err, html) => {
             if (err) {
                 callback && callback(err);
                 reject(err);
                 return;
             }
             const $ = cheerio.load(html);
-            
+
             /* Looks if we have found any listings. Not sure if we should keep this, will do futher tests. */
             if ($(".market_listing_table_message").text().indexOf("There are no listings for this item.") !== -1) {
                 reject(new Error("Item not found."));
                 return;
             }
 
-            const Item = new CMItem($, html, appid, item, params);
-            /* Will keep updating until I can find a reliable way to convert any currency */
+            const Item = new CMItem($, html, appid, marketHashName, params);
+            /* Better way to accurately get the listings, calls other APIs */
             Item.update(error => {
                 if (error) {
                     callback && callback(error);
@@ -58,42 +61,35 @@ const getMarketItemPage = function(appid, item, params, callback) {
  * @class CMItem
  */
 class CMItem {
+    
     /**
      * Scrapes the data and saves into the object
      * @param {Object} $                cheerio.load instance 
      * @param {String} body             HTML
      * @param {Number} appid            Steam appid
-     * @param {String} item             Market hash name
-     * @param {String} params.filter    Query for descriptions, etc... 
+     * @param {String} marketHashName             
+     * @param {Object} params           From getMarketItemPage 
      */
-    constructor($, body, appid, item, params) {
+    constructor($, body, appid, marketHashName, params) {
         this.appid = appid;
-        this.item = item;
+        this.marketHashName = marketHashName;
         this.params = params;
-        /* Image jQuery search */
-        this.img = $(".market_listing_largeimage > img").attr("src") || null;
-        /* Getting the currency code, change the currency code for update to update to it */
-        this.currency = params.currency;
-        /* Getting the language string for update options */
-        let languageMatch = body.match(/var g_strLanguage = "(\w+)"/);
-        if (languageMatch) {
-            this.language = languageMatch[1];
-        }
-        /* Getting the country code for update options */
-        let countryMatch = body.match(/var g_strCountryCode = "(\w+)"/);
-        if (countryMatch) {
-            this.country = countryMatch[1];
-        }
+        
+        /* Searches for the item image*/
+        this.image = $(".market_listing_largeimage > img").attr("src");
+        
         /* Checks if item is commodity, meaning all instances of this item are the same */
         this.commodity = false;
         if ($(".market_commodity_order_block").length > 0) {
             this.commodity = true;
         }  
+
         /* CommodityID is included for other items too */
         let commodityIDMatch = body.match(/Market_LoadOrderSpread\(\s*(\d+)\s*\)/);
         if (commodityIDMatch) {
             this.commodityID = parseFloat(commodityIDMatch[1]);
         }
+
         /* Sales of the item */
         this.sales = [];
         let salesMatch = body.match(/var line1=([^;]+);/);
@@ -101,20 +97,48 @@ class CMItem {
             this.sales = eval(salesMatch[1]).map(sale => [ Date.parse(sale[0]), sale[1], parseInt(sale[2]) ]);
         }
 
-        this.histogram = null;
-        this.listings = [];
-        this.sellOrders = [];
-        this.buyOrders = [];
+        /* Getting the language string for update options, defaults to this.params.language */
+        if (!params.hasOwnProperty("language")) { 
+            let languageMatch = body.match(/var g_strLanguage = "(\w+)"/);
+            if (languageMatch) {
+                this.params.language = languageMatch[1];
+            }
+        }
+        /* Getting the country code for update options, defaults to this.params.country */
+        if (!params.hasOwnProperty("country")) {
+            let countryMatch = body.match(/var g_strCountryCode = "(\w+)"/);
+            if (countryMatch) {
+                this.params.country = countryMatch[1];
+            }
+        }
+
+        /* Update method */
+        this.histogram = null;  // Histogram instance
+        this.listings = [];     // Item Listings
+        this.sellOrders = [];   // Histogram sellOrders
+        this.buyOrders = [];    // Histogram buyOrders
     }
 
     /**
-     * Updates the price for the item
-     * @param {function(err, result)} [callback] Either CMHistogramResults or Array made of CEconListingItem
+     * Updates the price for the item, update params property to update the item by those
+     * @param {Object} params                       Same as getMarketItemPage
+     * @param {function(err, result)} [callback]    Either CMHistogramResults or Array made of CEconListingItem
      * @return {Promise.<Result>}  
      */
-    update(callback) {
+    update(params, callback) {
+        if (typeof params === "function") {
+            callback = params;
+            params = null;
+        }
+
         return (this.commodity ? this.getHistogram() : this.getListings())
             .then(() => {
+                
+                /* Updates the parameters */
+                if (params) {
+                    this.params = params;
+                }
+
                 callback && callback(null, this);
                 return this;
             })
@@ -124,37 +148,42 @@ class CMItem {
             })
     }
 
+    /**
+     * Gets histogram for commodity item
+     * @private
+     * @return {Promise<CMHistogram>}
+     */
     getHistogram() {
-        return getMarketItemHistogram({
-            item_nameid : this.commodityID,
-            currency    : this.currency,
-            language    : this.language,
-            country     : this.country
-        })
+        const setHistogram = !this.histogram;
+        return (this.histogram ? this.histogram.update() : getMarketItemHistogram(this.commodityID, this.params))
             .then(histogram => {
                 this.buyOrders = histogram.buyOrders;
                 this.sellOrders = histogram.sellOrders;
                 
-                this.histogram = histogram;
+                if (setHistogram) this.histogram = histogram;
 
-                return this;
+                return histogram;
             })
     }
 
+    /**
+     * Gets listings for item
+     * @private
+     * @return {Promise<CMListing[]>}
+     */
     getListings() {
-        return getMarketItemListings(this.appid, this.item, {
-            country : this.country,
-            language: this.language,
-            currency: this.currency            
-        })
+        return getMarketItemListings(this.appid, this.marketHashName, this.params)
             .then(listings => {
                 this.listings = listings;
                 
-                return this;
+                return listings;
             })
     }
 }
 
+/**
+ * @package
+ */
 module.exports = {
     CMItem              : CMItem,
     getMarketItemPage   : getMarketItemPage

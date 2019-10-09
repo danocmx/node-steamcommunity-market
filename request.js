@@ -2,9 +2,9 @@ const request = require("request");
 
 /**
  * Sends a request using request lib
- * @param {String} method   HTTPS method
- * @param {String} endpoint Steamcommunity.com/market endpoint
- * @param {Object} params   Request parameters
+ * @param {String} method                   HTTPS method
+ * @param {String} endpoint                 Steamcommunity.com/market endpoint
+ * @param {Object} params                   Request parameters
  * @param {function (err, body)} callback 
  */
 function req(method, endpoint, params, callback) {
@@ -51,4 +51,7 @@ function req(method, endpoint, params, callback) {
     })
 }
 
+/**
+ * @package
+ */
 module.exports = req;

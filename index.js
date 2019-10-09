@@ -10,10 +10,14 @@ const CMSearchItem = require("./classes/CMSearchItem");
 /* Enums */
 const ECMCurrencies = require("./resources/ECMCurrencies");
 
+/* Helpers */
+const Helpers = require("./helpers");
+
 /* TODO: 
-- Centralize, make a SCM class controlling the request limits
+- Centralize, make a SCM class controlling the requests 
 - HTTP headers
-- JSDoc
+- centralize all known errors by steam
+- add embeding?
 */
 
 /**
@@ -24,6 +28,7 @@ module.exports = {
     enums                   : {
         ECMCurrencies   : ECMCurrencies
     },
+    /* Classes added so users can add their methods to prototype */
     classes                 : {
         CMHistogram     : CMHistogram.CMHistogram,
         CMItem          : CMItem.CMItem,
@@ -31,10 +36,8 @@ module.exports = {
         CMOverview      : CMOverview.CMOverview,
         CMSearchItem    : CMSearchItem.CMSearchItem
     },
-    utils                   : {
-        sortListings    : CMListing.sortListings,
-        getPriceToString: CMHistogram.getPriceToString
-    },
+    utils                   : Helpers,
+    /* Current public static methods to use the SCM API */
     getMarketItemHistogram  : CMHistogram.getMarketItemHistogram,
     getMarketItemPage       : CMItem.getMarketItemPage,
     getMarketItemListings   : CMListing.getMarketItemListings,
