@@ -9,7 +9,7 @@ const { ECMCurrencyCodes } = require("../resources/ECMCurrencies");
  * @param {ECMCurrencyCodes} [params.currency=USD]  CMEMarketCurrencies code
  * @param {String} [params.language="english"]      Language name
  * @param {String} [params.country="us"]            Country code
- * @param {function (Error, CMHistogram)} [callback] 
+ * @param {function(Error, CMHistogram)} [callback] 
  * @return {Promise<CMHistogram>}       
  */
 const getMarketItemHistogram = function(itemNameID, params, callback) {
@@ -60,16 +60,28 @@ class CMHistogram {
      * @param {String} itemNameID   From getMarketItemHistogram
      * @param {Object} qs           From getMarketItemHistogram
      * @param {Object} data         From the API
+     * @param {Boolean} loadEmpty   Loads empty histogram for linking purposes
      */
-    constructor(itemNameID, params, data) {
-        /* buyOrders & sellOrders [price, amount][]*/
+    constructor(itemNameID, params, data, loadEmpty) {
+        this.itemNameID = itemNameID;
+
         this.buyOrders = []
+        this.sellOrders = [];
+
+        this.empty = false;
+        if (loadEmpty) {
+            this.empty = true;
+            return;
+        }
+
+        this.time = Date.now();
+        
+        /* buyOrders & sellOrders [price, amount][]*/
         for (let i = 0; i < data.buy_order_graph.length; i++) {
             const buyOrder = data.buy_order_graph[i];
             this.buyOrders.push([buyOrder[0], buyOrder[1]]);
         }
 
-        this.sellOrders = [];
         for (let y = 0; y < data.sell_order_graph.length; y++) {
             const sellOrder = data.sell_order_graph[y];
             this.sellOrders.push([sellOrder[0], sellOrder[1]]);
@@ -79,10 +91,13 @@ class CMHistogram {
         this.suffix = data.price_suffix;
 
         /* For update method */
-        this.itemNameID = itemNameID;
         this.params = params;
 
         delete params.item_nameid;
+    }
+
+    static loadEmptyHistogram(itemNameID) {
+        return new CMHistogram(itemNameID, null, null, true);
     }
 
     /**
@@ -106,7 +121,7 @@ class CMHistogram {
             })
             .catch(err => {
                 callback && callback(err);
-                return err;
+                return Promise.reject(err);
             })
     }
 
@@ -115,8 +130,15 @@ class CMHistogram {
      * @param {CMHistogram} histogram
      */
     updateFromObject(histogram) {
-        this.sellOrders = histogram.sellOrders;
-        this.buyOrders = histogram.buyOrders;
+        this.empty = false;
+        this.time = Date.now();
+
+        this.sellOrders.length = 0;
+        this.sellOrders.push(...histogram.sellOrders);
+
+        this.buyOrders.length = 0;
+        this.buyOrders.push(...histogram.buyOrders);
+        
         this.prefix = histogram.prefix;
         this.suffix = histogram.suffix;
         this.params = histogram.params; // Only if user chooses to change the language, currency, country codes

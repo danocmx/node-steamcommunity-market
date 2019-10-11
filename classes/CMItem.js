@@ -71,6 +71,8 @@ class CMItem {
      * @param {Object} params           From getMarketItemPage 
      */
     constructor($, body, appid, marketHashName, params) {
+        this.time = Date.now();
+
         this.appid = appid;
         this.marketHashName = marketHashName;
         this.params = params;
@@ -115,8 +117,14 @@ class CMItem {
         /* Update method */
         this.histogram = null;  // Histogram instance
         this.listings = [];     // Item Listings
-        this.sellOrders = [];   // Histogram sellOrders
-        this.buyOrders = [];    // Histogram buyOrders
+    }
+
+    get sellOrders() {
+        return this.histogram ? this.histogram.sellOrders : null;
+    }
+
+    get buyOrders() {
+        return this.histogram ? this.histogram.buyOrders : null;
     }
 
     /**
@@ -133,7 +141,8 @@ class CMItem {
 
         return (this.commodity ? this.getHistogram() : this.getListings())
             .then(() => {
-                
+                this.time = Date.now();
+
                 /* Updates the parameters */
                 if (params) {
                     this.params = params;
@@ -144,7 +153,7 @@ class CMItem {
             })
             .catch(err => {
                 callback && callback(err);
-                return err;
+                return Promise.reject(err);
             })
     }
 
@@ -156,13 +165,10 @@ class CMItem {
     getHistogram() {
         const setHistogram = !this.histogram;
         return (this.histogram ? this.histogram.update() : getMarketItemHistogram(this.commodityID, this.params))
-            .then(histogram => {
-                this.buyOrders = histogram.buyOrders;
-                this.sellOrders = histogram.sellOrders;
-                
+            .then(histogram => {                
                 if (setHistogram) this.histogram = histogram;
 
-                return histogram;
+                return this.histogram;
             })
     }
 
@@ -174,9 +180,10 @@ class CMItem {
     getListings() {
         return getMarketItemListings(this.appid, this.marketHashName, this.params)
             .then(listings => {
-                this.listings = listings;
+                this.listings.length = 0;
+                this.listings.push(...listings);
                 
-                return listings;
+                return this.listings;
             })
     }
 }

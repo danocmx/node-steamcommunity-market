@@ -1,18 +1,19 @@
 const request = require("../request");
 const { ECMCurrencyCodes } = require("../resources/ECMCurrencies");
+const { getNormalCurrencyFormat } = require("../helpers");
 
 /**
  * Gets descriptive sellOrders from SCM
- * @param {Number} appid                            Steam AppID
+ * @param {Number} appid                                Steam AppID
  * @param {String} marketHashName                             
- * @param {Object} [params]                         Query string parameters
- * @param {Number} [params.start=0]                 From which listings search starts
- * @param {Number} [params.count]                   How many listings we want (Amount)
- * @param {ECMCurrencyCodes} [params.currency=USD]  ECMCurrencyCodes code
- * @param {String} [params.language="english"]      Language name
- * @param {String} [params.country="us"]            Country code
- * @param {String} [params.query]                   Search query
- * @param {function (Error, CMListing[])} [callback]
+ * @param {Object} [params]                             Query string parameters
+ * @param {Number} [params.start=0]                     From which listings search starts
+ * @param {Number} [params.count]                       How many listings we want (Amount)
+ * @param {ECMCurrencyCodes} [params.currency=USD]      ECMCurrencyCodes code
+ * @param {String} [params.language="english"]          Language name
+ * @param {String} [params.country="us"]                Country code
+ * @param {String} [params.query]                       Search query
+ * @param {function(Error, CMListing[])} [callback]
  * @return {Promise<CMListing[]>}
  */
 const getMarketItemListings = function(appid, marketHashName, params, callback) {
@@ -63,13 +64,21 @@ function getMarketItemListingsCallback(appid, marketHashName, qs, fetchMore, cal
         fetchMore += qs.start;
     }
 
-    request("GET", `listings/${appid}/${marketHashName}/render`, { json: true, gzip: true, qs: qs }, (err, { listinginfo, assets, pagesize, total_count }) => {
+    request("GET", `listings/${appid}/${marketHashName}/render`, { json: true, gzip: true, qs: qs }, (err, response) => {
         if (err) {
             callback(err);
             return;
         }
 
+        // JSON can parse null response
+        if (response == null) {
+            callback(new Error("No response received"));
+            return;
+        }
+
+        let { listinginfo, assets, pagesize, total_count } = response;
         /* Pushes listings to the listings array */
+        const time = Date.now();
         listings = listings || [];
         for (let listingID in listinginfo) {
             if (!listinginfo.hasOwnProperty(listingID) || listingID === "purchaseinfo") continue;
@@ -78,7 +87,7 @@ function getMarketItemListingsCallback(appid, marketHashName, qs, fetchMore, cal
             const { appid, contextid, id } = listing.asset;
     
             const asset = assets[appid][contextid][id];
-            listings.push(new CMListing(asset, listing) );
+            listings.push( new CMListing(asset, listing, time) );
         }
 
         /* Checks how many more do we need to search for */
@@ -114,11 +123,14 @@ class CMListing {
     /**
      * Just gives us the necessery info
      * @constructor
-     * @param {Object} asset         Asset data from API
-     * @param {Object} listinginfo   Currency & Price info from API
+     * @param {Object} asset        Asset data from API
+     * @param {Object} listinginfo  Currency & Price info from API
+     * @param {Number} time         Time when searched for this listing
      */
-    constructor(asset, listinginfo) {
-        /* Asset info */
+    constructor(asset, listinginfo, time) {
+        this.time = time;
+        
+        // Asset info
         this.appid = asset.appid;
         this.name = asset.name;
         this.marketName = asset.market_name;
@@ -132,24 +144,55 @@ class CMListing {
         this.descriptions = asset.descriptions;
         this.actions = asset.actions;
         this.commodity = asset.commodity;
-        /* Actions */
+        // Actions 
         this.actions = asset.actions;
         this.marketActions = asset.market_actions;
-        /* Market properties */
+        // Market properties 
         this.tradable = asset.tradable;
         this.marketable = asset.marketable;
         this.marketTradableRestriction = asset["market_tradable_restriction"] || 0
         this.marketMarketableRestriction = asset["market_marketable_restriction"] || 0
         this.marketBuyCountryRestriction = asset["market_buy_country_restriction"] || null;
-        /* Currency & Price info */
+        
+        // Listing info
         this.listingid = listinginfo.listingid;
         
-        const fee = listinginfo["converted_fee"] || listinginfo.fee;
-        const price = listinginfo["converted_price"] || listinginfo.price;
-        this.fee = fee / 100;
-        this.price = (price + fee) / 100;
+        // Original, in what currency and how much did the listing owner list for
+        this.oPrice = listinginfo.price;
+        this.oFee = listinginfo.fee;
+        this.oCurrency = getNormalCurrencyFormat(listinginfo["currency_id"]);
         
-        this.currency = parseInt(((listinginfo["converted_currencyid"] || listinginfo.currencyid) + "").substr(1));
+        this.steamFee = listinginfo["steam_fee"];
+        this.publisherFee = listinginfo["publisher_fee"];
+        this.publisherFeePercent = listinginfo["publisher_fee_percent"]; 
+
+        // Converted
+        this.convertedPrice = listinginfo["converted_price"];
+        this.convertedFee = listinginfo["converted_fee"];
+        this.convertedCurrency = getNormalCurrencyFormat(listinginfo["converted_currencyid"]);
+        // Other converted info, can be used to do proper conversions for other currency related stuff on steam
+        this.convertedSteamFee = listinginfo["converted_steam_fee"];
+        this.convertedPublisherFee = listinginfo["converted_publisher_fee"];
+        this.convertedPricePerUnit = listinginfo["converted_price_per_unit"];
+        this.convertedFeePerUnit = listinginfo["converted_fee_per_unit"];
+        this.convertedSteamFeePerUnit = listinginfo["converted_steam_fee_per_unit"];
+        this.convertedPublisherFeePerUnit = listinginfo["converted_publisher_fee_per_unit"];
+    }
+
+    get price() {
+        return this.convertedPrice || this.oPrice
+    }
+
+    get fullPrice() {
+        return this.price + this.fee;
+    }
+
+    get fee() {
+        return this.convertedFee || this.oFee;
+    }
+
+    get currency() {
+        return this.convertedCurrency || this.oCurrency
     }
 }
 

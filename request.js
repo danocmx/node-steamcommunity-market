@@ -30,7 +30,7 @@ function req(method, endpoint, params, callback) {
             callback(err);
             return;
         }
-
+        
         if (response.statusCode > 299 || response.statusCode < 199) {
             callback(new Error("Bad error code: " + response.statusCode));
             return;

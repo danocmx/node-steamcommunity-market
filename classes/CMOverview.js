@@ -52,6 +52,8 @@ class CMOverview {
      * @param {Object} marketOverviewResults    from API
      */
     constructor(appid, marketHashName, qs, marketOverviewResults) {
+        this.time = Date.now();
+        
         this.appid = appid;
         this.marketHashName = marketHashName;
         
@@ -82,13 +84,14 @@ class CMOverview {
 
                 /* Incase the user changes qs */
                 this.qs = overview.qs;
+                this.time = Date.now();
 
                 callback && callback(null, this);
                 return this;
             })
             .catch(err => {
                 callback && callback(err);
-                return err;
+                return Promise.reject(err);
             })
     }
 }

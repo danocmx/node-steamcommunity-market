@@ -2,7 +2,7 @@ const request = require("../request");
 const { getMarketItemPage } = require("./CMItem");
 const { getMarketItemOverview } = require("./CMOverview");
 const { getMarketItemListings, CMListing } = require("./CMListing");
-const { getMarketItemHistogram } = require("./CMHistogram");
+const { getMarketItemHistogram, CMHistogram } = require("./CMHistogram");
 const { parseCurrencyText, convertCurrencySign, convertCurrencyCode } = require("../helpers");
 const { ECMCurrencyCodes } = require("../resources/ECMCurrencies");
 
@@ -90,7 +90,7 @@ function searchMarketCallback(params, fetchMore, callback, searchResults) {
         }
         
         let { results, total_count, pagesize } = search;
-        
+
         /* Checks if there were any results to begin with */
         if (total_count < 1) {
             callback(new Error("No results found."));
@@ -98,13 +98,14 @@ function searchMarketCallback(params, fetchMore, callback, searchResults) {
         }
 
         /* Using CMSearchItem object */
+        const time = Date.now();
         searchResults = searchResults || [];
         for (let i = 0; i < results.length; i++) {
-            searchResults.push( new CMSearchItem(results[i]) );
+            searchResults.push( new CMSearchItem(results[i], time) );
         }
 
         /* Checks how many more do we need to search for */
-        const celling = fetchMore && typeof fetchMore === "number" < total_count ? fetchMore : total_count;
+        const celling = typeof fetchMore === "number" && fetchMore < total_count ? fetchMore : total_count;
         pagesize = parseInt(pagesize);
         if ((params.start + pagesize < celling) && fetchMore) {
 
@@ -130,11 +131,11 @@ class CMSearchItem {
     /**
      * Classifies search data
      * @constructor
-     * @param {Object} searchItem       JSON response from the API
+     * @param {Object} searchItem   JSON response from the API
+     * @param {Number} time         Time when we searched for the item    
      */
-    constructor(searchItem) {
-        /* Saves query strings for update */
-        this.commodityID = null;
+    constructor(searchItem, time) {
+        this.time = time;
 
         /* Names, they both should be fairly the same */
         this.name = searchItem.name;
@@ -185,10 +186,10 @@ class CMSearchItem {
         }
 
         /* For CM's */
-        this.page = null;
+        this.page = null;       // includes buyOrders, sellOrders, listings
         this.overview = null;
-        this.listings = null;
-        this.histogram = null;
+        this.listings = [];    // listings
+        this.histogram = null;  // includes buyOrders, sellOrders
 
         /* Default params for the CM's */
         this.params = {
@@ -196,6 +197,18 @@ class CMSearchItem {
             country : "us",
             currency: this.currency
         }
+    }
+
+    get commodityID() {
+        return this.page ? this.page.commodityID : null;
+    }
+
+    get sellOrders() {
+        return this.histogram ? this.histogram.sellOrders : null;
+    }
+
+    get buyOrders() {
+        return this.histogram ? this.histogram.buyOrders : null;
     }
 
     /**
@@ -239,7 +252,7 @@ class CMSearchItem {
             })
             .catch(err => {
                 callback && callback(err);
-                return err;
+                return Promise.reject(err);
             })
     }
 
@@ -307,12 +320,12 @@ class CMSearchItem {
                     this._changeCurrency(oParams.currency);
                 }
 
-                callback && callback(null, overview);
-                return overview;
+                callback && callback(null, this.overview);
+                return this.overview;
             })
             .catch(err => {
                 callback && callback(err);
-                return err;
+                return Promise.reject(err);
             })
     }
 
@@ -338,17 +351,29 @@ class CMSearchItem {
             .then(page => {
                 if (setPage) {
                     this.page = page;
+
+                    /* Updates the histogram */
+                    if (this.histogram && page.histogram) {
+                        this.histogram.updateFromObject(page.histogram)
+                        page.histogram = this.histogram;
+                    }
+                    else {
+                        if (!page.histogram) {
+                            this.histogram = CMHistogram.loadEmptyHistogram(this.commodityID);
+                            page.histogram = this.histogram;
+                        } else this.histogram = page.histogram
+                    };
+
+                    /* Updates listings */
+                    const savedListings = page.listings;
+                    page.listings = this.listings;
+
+                    this.listings.length = 0;
+                    this.listings.push(...savedListings)
                 }
 
-                this.commodityID = page.commodityID;
-
-                /* Updates the histogram */
-                if (this.histogram && page.histogram) this.histogram.updateFromObject(this.histogram);
-                else this.histogram = page.histogram;
-                
-                /* Updates listings */
-                this.listings = page.listings;
-                if (page.listings && page.listings.length > 0) this._updateFirstListing(page.listings);
+                // Gets data for search node
+                if (this.listings.length > 0) this._updateFirstListing(this.listings);
 
                 if (oParams.currency) this.params.currency = oParams.currency;
                 if (oParams.language) this.params.language = oParams.language;
@@ -359,7 +384,7 @@ class CMSearchItem {
             })
             .catch(err => {
                 callback && callback(err);
-                return err;
+                return Promise.reject(err);
             })
     }
 
@@ -382,24 +407,22 @@ class CMSearchItem {
 
         return getMarketItemListings(this.appid, this.marketHashName, params)
             .then(listings => {
-                this.listings = listings;
+                this.listings.length = 0;
+                this.listings.push(...listings);
 
                 /* Gets the data for the first listing data */
                 this._updateFirstListing(listings);
-                
-                /* Updates this.page */
-                if (this.page) this.page.listings = listings;
                 
                 if (oParams.currency) this.params.currency = oParams.currency;
                 if (oParams.language) this.params.language = oParams.language;
                 if (oParams.currency) this._changeCurrency(oParams.currency);
 
                 callback && callback(null, listings);
-                return listings;
+                return this.listings;
             })
             .catch(err => {
                 callback && callback(err);
-                return err;
+                return Promise.reject(err);
             })
     }
 
@@ -443,27 +466,16 @@ class CMSearchItem {
                 this.price = histogram.sellOrders[0] ? histogram.sellOrders[0][0] : 0;
                 this.oldResults = true;
 
-                /* Updates this.page */
-                if (this.page) {
-                    if (!this.page.histogram) {
-                        this.page.histogram = histogram;
-                        this.page.sellOrders = histogram.sellOrders;
-                        this.page.buyOrders = histogram.buyOrders;
-                    } else {
-                        this.page.histogram.updateFromObject(histogram);
-                    }
-                }
-
                 if (oParams.currency) this.params.currency = oParams.currency;
                 if (oParams.language) this.params.language = oParams.language;
                 if (oParams.currency) this._changeCurrency(oParams.currency);
 
-                callback && callback(null, histogram);
-                return histogram;
+                callback && callback(null, this.histogram);
+                return this.histogram;
             })
             .catch(err => {
                 callback && callback(err);
-                return err;
+                return Promise.reject(err);
             })
     }
 
