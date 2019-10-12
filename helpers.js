@@ -1,4 +1,4 @@
-const { ECMCurrencySigns, ECMCurrencyCodes } = require("./resources/ECMCurrencies");
+const { ECMCurrencySigns, ECMCurrencyCodes, ECMCurrencyPrefixes, ECMCurrencySuffixes } = require("./resources/ECMCurrencies");
 
 /**
  * Parses the currency text
