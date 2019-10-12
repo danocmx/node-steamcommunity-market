@@ -13,7 +13,7 @@ SCM.searchMarket({
         return searchNode.updateSearchNode()
     })
     .then(searchNode => {
-        return Promise.all([ searchNode.getOverview(), searchNode.getListings(), searchNode.getPage() ])
+        return Promise.all([ searchNode.getOverview(), searchNode.getListings({ currency: 2 }), searchNode.getPage() ])
             .then(([overview, listings, page]) => {
                 // Object linking
                 if (listings !== page.listings) {
@@ -22,7 +22,7 @@ SCM.searchMarket({
 
                 log("Received overview, listings, page of a searchNode.", "\x1b[46m" + "\x1b[37m")
 
-                return searchNode.page.getListings()
+                return searchNode.page.getListings({ currency: 3 })
             })
             .then(listings => {
                 // Object linking
