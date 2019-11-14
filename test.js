@@ -1,5 +1,7 @@
 const SCM = require("./index");
 
+// TODO: add a test framework...
+
 SCM.searchMarket({
     count       : 100,
     sortColumn  : 'price',
@@ -14,33 +16,34 @@ SCM.searchMarket({
     })
     .then(searchNode => {
         return Promise.all([ searchNode.getOverview(), searchNode.getListings({ currency: 2 }), searchNode.getPage() ])
-            .then(([overview, listings, page]) => {
-                // Object linking
-                if (listings !== page.listings) {
-                    return Promise.reject(new Error("Listings are not linked."))
-                }
+    .then(async ([overview, listings, page]) => {
+        // Object linking
+        let listingsUpdatedFromPage;
+        try {
+            listingsUpdatedFromPage = await searchNode.page.getListings({ currency: 3 })
+        } catch(e) {
+            return Promise.reject(new Error("Error while updating listings: " + e.message));
+        } 
 
-                log("Received overview, listings, page of a searchNode.", "\x1b[46m" + "\x1b[37m")
+        if (listings !== page.listings !== listingsUpdatedFromPage) {
+            return Promise.reject(new Error("Listings are not linked."))
+        }
 
-                return searchNode.page.getListings({ currency: 3 })
-            })
-            .then(listings => {
-                // Object linking
-                if (listings !== searchNode.page.listings) {
-                    return Promise.reject(new Error("Listings are not linked."))
-                }
-                // Now we have itemNameID from page load
-                return searchNode.page.getHistogram();
-            })
-            .then(histogram => {
-                return histogram.update()
-            })
-            .then(histogram => {
-                if (histogram !== searchNode.histogram) {
-                    return Promise.reject(new Error("Histograms are not linked."));
-                }
-            })
-    }).then(() => {
+        let histogram, updatedHistogram;
+        try {
+            histogram = await searchNode.page.getHistogram();
+            updatedHistogram = await histogram.update();
+        } catch(e) {
+            return Promise.reject(new Error("Error while getting histogram: " + e.message));
+        }
+
+        if (histogram !== updatedHistogram) {
+            return Promise.reject(new Error("Histograms are not linked."));
+        }
+
+        return SCM.getMarketItemPage(440, "Unusual Waxy Wayfinder");
+    })
+    .then(() => {
         log("Received histogram.", "\x1b[46m" + "\x1b[37m")
         return SCM.getMarketItemPage(440, "Unusual Waxy Wayfinder")
     })
