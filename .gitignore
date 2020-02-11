@@ -2,13 +2,13 @@
 package-lock.json
 # No need to upload node_modules to git
 /node_modules
-# Hidden files from github
-/test
-hats.json
-storage.js
 # node-scm modules that are not yet ready
 /components
 # Hidden example scripts
 /base-scripts
 # JSDoc
 /out
+# editor
+.vscode
+# test file for dev
+/test/test.js

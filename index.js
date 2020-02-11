@@ -1,46 +1,56 @@
-"use strict";
+const CommunityMarket = require('./lib/CommunityMarket');
+const Params = require('./lib/Params');
 
-/* Classes */
-const CMHistogram = require("./classes/CMHistogram");
-const CMItem = require("./classes/CMItem");
-const CMListing = require("./classes/CMListing");
-const CMOverview = require("./classes/CMOverview");
-const CMSearchItem = require("./classes/CMSearchItem");
+const CMHistogram = require('./lib/classes/CMHistogram');
+const CMHistory = require('./lib/classes/CMHistory');
+const CMListing = require('./lib/classes/CMListing');
+const CMListings = require('./lib/classes/CMListings');
+const CMOverview = require('./lib/classes/CMOverview');
+const CMResponse = require('./lib/classes/CMResponse');
+const CMSearch = require('./lib/classes/CMSearch');
+const CMSearchListing = require('./lib/classes/CMSearchListing');
 
-/* Enums */
-const ECMCurrencies = require("./resources/ECMCurrencies");
+const ECMCurrencyCodes = require('./lib/resources/ECMCurrencyCodes');
+const ECMCurrencyPrefixes = require('./lib/resources/ECMCurrencyPrefixes');
+const ECMCurrencySigns = require('./lib/resources/ECMCurrencySigns');
+const ECMCurrencySuffixes = require('./lib/resources/ECMCurrencySuffixes');
 
-/* Helpers */
-const Helpers = require("./helpers");
+const convertCurrencyCode = require('./lib/utils/convertCurrencyCode');
+const convertCurrencySign = require('./lib/utils/convertCurrencySign');
+const getNormalCurrencyFormat = require('./lib/utils/getNormalCurrencyFormat');
+const isRequestSuccessful = require('./lib/utils/isRequestSuccessful');
+const parseCurrencyText = require('./lib/utils/parseCurrencyText');
 
-/* TODO: 
-- Centralize, make a SCM class controlling the requests 
-- HTTP headers
-- centralize all known errors by steam
-- return loop listings after error
-*/
 
-/**
- * Includes all the methods, enums and classes
- * @package
- */
-module.exports = {
-    enums                   : {
-        ECMCurrencies   : ECMCurrencies
-    },
-    /* Classes added so users can add their methods to prototype */
-    classes                 : {
-        CMHistogram     : CMHistogram.CMHistogram,
-        CMItem          : CMItem.CMItem,
-        CMListing       : CMListing.CMListing,
-        CMOverview      : CMOverview.CMOverview,
-        CMSearchItem    : CMSearchItem.CMSearchItem
-    },
-    utils                   : Helpers,
-    /* Current public static methods to use the SCM API */
-    getMarketItemHistogram  : CMHistogram.getMarketItemHistogram,
-    getMarketItemPage       : CMItem.getMarketItemPage,
-    getMarketItemListings   : CMListing.getMarketItemListings,
-    getMarketItemOverview   : CMOverview.getMarketItemOverview,
-    searchMarket            : CMSearchItem.searchMarket
-}
+CommunityMarket.classes = {
+	CMHistogram,
+	CMHistory,
+	CMListing,
+	CMListings,
+	CMOverview,
+	CMResponse,
+	CMSearch,
+	CMSearchListing,
+};
+
+CommunityMarket.enums = {
+	ECMCurrencyCodes,
+	ECMCurrencyPrefixes,
+	ECMCurrencySigns,
+	ECMCurrencySuffixes,
+};
+
+CommunityMarket.utils = {
+	convertCurrencyCode,
+	convertCurrencySign,
+	getNormalCurrencyFormat,
+	isRequestSuccessful,
+	parseCurrencyText,
+};
+
+CommunityMarket.lib = {
+	Params,
+};
+
+
+module.exports = CommunityMarket;
