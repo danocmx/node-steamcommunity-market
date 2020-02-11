@@ -1,10 +1,10 @@
 {
   "name": "steamcommunity-market",
-  "version": "2.4.2",
+  "version": "3.0.0",
   "description": "Gets data from steamcommunity market's API & Pages.",
   "main": "index.js",
   "scripts": {
-    "test": "node test.js"
+    "test": "mocha"
   },
   "keywords": [
     "steam",
@@ -15,7 +15,18 @@
   "author": "danocmx",
   "license": "ISC",
   "dependencies": {
-    "cheerio": "^1.0.0-rc.3",
-    "request": "^2.88.0"
+    "lodash": "^4.17.15",
+    "request": "^2.88.0",
+    "request-promise": "^4.2.5"
+  },
+  "devDependencies": {
+    "chai": "^4.2.0",
+    "eslint": "^6.8.0",
+    "eslint-config-airbnb-base": "^14.0.0",
+    "eslint-plugin-import": "^2.20.1",
+    "eslint-plugin-prettier": "^3.1.2",
+    "jsdoc-to-markdown": "^5.0.3",
+    "mocha": "^7.0.1",
+    "prettier": "^1.19.1"
   }
 }
