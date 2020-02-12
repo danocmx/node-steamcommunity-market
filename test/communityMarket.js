@@ -45,18 +45,6 @@ describe('CommunityMarket methods', () => {
 		},
 	});
 
-	it('histogram', (done) => {
-		communityMarket.getHistogram({
-			itemNameID: 1,
-			appid: 440,
-		})
-			.then((histogram) => {
-				assert.instanceOf(histogram, CommunityMarket.classes.CMHistogram);
-
-				done();
-			});
-	});
-
 	it('listings', (done) => {
 		const count = 170;
 
@@ -68,6 +56,18 @@ describe('CommunityMarket methods', () => {
 			.then((listings) => {
 				assert.instanceOf(listings, CommunityMarket.classes.CMListings);
 				assert.equal(listings.totalCount, count);
+
+				done();
+			});
+	});
+
+	it('histogram', (done) => {
+		communityMarket.getHistogram({
+			itemNameID: 1,
+			appid: 440,
+		})
+			.then((histogram) => {
+				assert.instanceOf(histogram, CommunityMarket.classes.CMHistogram);
 
 				done();
 			});
