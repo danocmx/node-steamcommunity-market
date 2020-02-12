@@ -1,6 +1,6 @@
 {
   "name": "steamcommunity-market",
-  "version": "3.0.1",
+  "version": "3.0.2",
   "description": "Uses steamcommunity market API to get data.",
   "main": "index.js",
   "scripts": {
