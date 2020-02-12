@@ -1,5 +1,11 @@
-# V3
-Only tries to fetch data from the servers.
+# steamcommunity-market
+Handy library that requests data from steamcommunity market API.
+
+# Instalation
+It's simple, just type in:
+```
+npm install steamcommunity-market
+```
 
 # Docs
 <a name="CommunityMarket"></a>
