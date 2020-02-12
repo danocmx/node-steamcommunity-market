@@ -1,7 +1,7 @@
 {
   "name": "steamcommunity-market",
   "version": "3.0.0",
-  "description": "Gets data from steamcommunity market's API & Pages.",
+  "description": "Uses steamcommunity market API to get data.",
   "main": "index.js",
   "scripts": {
     "test": "mocha"
@@ -10,10 +10,11 @@
     "steam",
     "steamcommunity",
     "market",
-    "steamcommunity.com/market"
+    "steamcommunity.com/market",
+    "communityMarket"
   ],
   "author": "danocmx",
-  "license": "ISC",
+  "license": "MIT",
   "dependencies": {
     "lodash": "^4.17.15",
     "request": "^2.88.0",
@@ -28,5 +29,13 @@
     "jsdoc-to-markdown": "^5.0.3",
     "mocha": "^7.0.1",
     "prettier": "^1.19.1"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/danocmx/node-steamcommunity-market.git"
+  },
+  "bugs": {
+    "url": "https://github.com/danocmx/node-steamcommunity-market/issues"
+  },
+  "homepage": "https://github.com/danocmx/node-steamcommunity-market#readme"
 }
