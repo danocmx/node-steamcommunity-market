@@ -2,7 +2,7 @@
   "name": "steamcommunity-market",
   "version": "3.0.3",
   "description": "Uses steamcommunity market API to get data.",
-  "main": "index.js",
+  "main": "./lib",
   "scripts": {
     "test": "mocha"
   },
