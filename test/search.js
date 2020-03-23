@@ -19,5 +19,6 @@ describe('Search', () => {
 
 				done();
 			});
-	});
+	})
+		.timeout(5000);
 });
