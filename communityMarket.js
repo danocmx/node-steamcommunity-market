@@ -60,7 +60,7 @@ CommunityMarket.enums = {
 	ECMCurrencySuffixes,
 };
 
-CommunityMarket.utils = {
+CommunityMarket.currencies = {
 	convertCurrencyCode,
 	convertCurrencySign,
 	getNormalCurrencyFormat,
