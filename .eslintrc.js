@@ -25,5 +25,6 @@ module.exports = {
         "object-curly-newline": "off",
         "radix": "off",
         "no-plusplus": "off",
+        "strict": "off",
     }
 };
