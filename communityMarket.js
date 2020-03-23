@@ -1,3 +1,5 @@
+'use strict';
+
 const CMResponse = require('./lib/CMResponse');
 const CommunityMarket = require('./lib/CommunityMarket');
 const MarketMethod = require('./lib/MarketMethod');
