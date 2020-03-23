@@ -1,7 +1,7 @@
 const { assert } = require('chai');
 const { describe, it } = require('mocha');
 
-const CommunityMarket = require('../index');
+const CommunityMarket = require('../communityMarket');
 
 
 describe('CommunityMarket creation', () => {
@@ -46,7 +46,7 @@ describe('CommunityMarket methods', () => {
 	});
 
 	it('listings', (done) => {
-		const count = 170;
+		const count = 110;
 
 		communityMarket.getListings({
 			marketHashName: 'Earbuds',
@@ -54,7 +54,7 @@ describe('CommunityMarket methods', () => {
 			count,
 		})
 			.then((listings) => {
-				assert.instanceOf(listings, CommunityMarket.classes.CMListings);
+				assert.instanceOf(listings, CommunityMarket.Listings.CMListings);
 				assert.equal(listings.totalCount, count);
 
 				done();
@@ -67,7 +67,7 @@ describe('CommunityMarket methods', () => {
 			appid: 440,
 		})
 			.then((histogram) => {
-				assert.instanceOf(histogram, CommunityMarket.classes.CMHistogram);
+				assert.instanceOf(histogram, CommunityMarket.Histogram.CMHistogram);
 
 				done();
 			});
@@ -79,7 +79,7 @@ describe('CommunityMarket methods', () => {
 			marketHashName: 'Tour of Duty Ticket',
 		})
 			.then((overview) => {
-				assert.instanceOf(overview, CommunityMarket.classes.CMOverview);
+				assert.instanceOf(overview, CommunityMarket.Overview.CMOverview);
 
 				done();
 			});
@@ -93,7 +93,7 @@ describe('CommunityMarket methods', () => {
 			count,
 		})
 			.then((search) => {
-				assert.instanceOf(search, CommunityMarket.classes.CMSearch);
+				assert.instanceOf(search, CommunityMarket.Search.CMSearch);
 				assert.equal(search.totalCount, count);
 
 				done();
