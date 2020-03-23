@@ -7,6 +7,11 @@ It's simple, just type in:
 npm install steamcommunity-market
 ```
 
+For more stable version:
+```
+npm install steamcommunity-market@3.0.3
+```
+
 # Docs
 <a name="CommunityMarket"></a>
 
