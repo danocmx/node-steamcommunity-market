@@ -14,8 +14,12 @@ describe('Search', () => {
 			count,
 		})
 			.then((search) => {
+				// Set of tests that will throw an error if not successful
+				// Unfortunaly cannot be tested otherwise
 				assert.instanceOf(search, CommunityMarket.Search.CMSearch);
 				assert.equal(search.totalCount, count);
+				/* eslint-disable-next-line */
+				for (const _listing of search) {}
 
 				done();
 			});

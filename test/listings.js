@@ -6,20 +6,24 @@ const CommunityMarket = require('../communityMarket');
 const communityMarket = new CommunityMarket();
 
 describe('Listings', () => {
-	it('functionality', (done) => {
-		const count = 110;
+	const count = 110;
 
+	it('functionality', (done) => {
 		communityMarket.getListings({
 			marketHashName: 'Earbuds',
 			appid: 440,
 			count,
 		})
 			.then((listings) => {
-				assert.instanceOf(listings, CommunityMarket.Listings.CMListings);
+				// Set of tests that will throw an error if not successful
+				// Unfortunaly cannot be tested otherwise
 				assert.equal(listings.totalCount, count);
+				assert.instanceOf(listings, CommunityMarket.Listings.CMListings);
+				/* eslint-disable-next-line */
+				for (const _listing of listings) {}
 
 				done();
 			});
-	})
-		.timeout(10000);
-});
+	});
+})
+	.timeout(10000);
