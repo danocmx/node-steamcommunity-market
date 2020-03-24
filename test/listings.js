@@ -21,5 +21,5 @@ describe('Listings', () => {
 				done();
 			});
 	})
-		.timeout(5000);
+		.timeout(10000);
 });
